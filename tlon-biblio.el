@@ -1,4 +1,4 @@
-;;; tlon-bae.el --- A collection of convenience functions for bibliography management. -*- lexical-binding: t -*-
+;;; tlon-biblio.el --- A collection of convenience functions for bibliography management. -*- lexical-binding: t -*-
 
 ;; Author: Pablo Stafforini
 ;; Maintainer: Pablo Stafforini
@@ -61,15 +61,15 @@
                         (goto-char (point-min))
                         (re-search-forward "^$")
                         (buffer-substring-no-properties (point) (point-max)))))
-    (my-select-bib-entry json-string)))
+    (tlon-biblio-get-doi-in-json json-string)))
 
-(defun my-search-bib-entry ()
+(defun tlon-biblio-zotra-add-entry-from-metadata ()
   (interactive)
   (let ((title (read-string "Enter title: "))
         (author (read-string "Enter author: ")))
-    (if-let ((doi (my-query-crossref title author)))
+    (if-let ((doi (tlon-biblio--query-crossref title author)))
 	(zotra-add-entry-from-search doi)
       (message "No entry found"))))
 
 (provide 'tlon-biblio)
-;;; tlon-bae.el ends here
+;;; tlon-biblio.el ends here
