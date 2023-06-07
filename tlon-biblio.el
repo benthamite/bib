@@ -40,11 +40,11 @@
 (defun tlon-biblio-get-doi-in-json (json-string)
   "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
-              (json-array-type 'list)
-              (json-key-type 'symbol)
-              (data (json-read-from-string json-string))
-              (items (alist-get 'items (alist-get 'message data)))
-              (candidates (mapcar (lambda (item)
+	      (json-array-type 'list)
+	      (json-key-type 'symbol)
+	      (data (json-read-from-string json-string))
+	      (items (alist-get 'items (alist-get 'message data)))
+	      (candidates (mapcar (lambda (item)
 				    (let ((author-names (mapconcat
 							 (lambda (author)
 							   (concat (alist-get 'family author)
