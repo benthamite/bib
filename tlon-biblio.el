@@ -53,12 +53,14 @@
               (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun tlon-biblio--query-crossref (title author)
+(defun tlon-biblio--query-crossref (title &optional author)
   "Query the Crossref database for TITLE and AUTHOR."
   (let* ((url-request-method "GET")
-         (url (format "https://api.crossref.org/works?query.bibliographic=%s&query.author=%s"
-                      (url-hexify-string title)
-                      (url-hexify-string author)))
+         (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
+			      (url-hexify-string title))
+		      (when author
+			(format "&query.author=%s"
+				(url-hexify-string author)))))
          (url-buffer (url-retrieve-synchronously url))
          (json-string (with-current-buffer url-buffer
                         (goto-char (point-min))
@@ -66,12 +68,14 @@
                         (buffer-substring-no-properties (point) (point-max)))))
     (tlon-biblio-get-doi-in-json json-string)))
 
-(defun tlon-biblio-zotra-add-entry-from-metadata ()
-  "Get citation for selected title/author and add it to bibfile via its DOI."
+(defun tlon-biblio-zotra-add-entry-from-title ()
+  "Get citation for selected author/title pair and add it to bibfile via its DOI."
   (interactive)
   (let ((title (read-string "Enter title: "))
         (author (read-string "Enter author: ")))
-    (if-let ((doi (tlon-biblio--query-crossref title author)))
+    (if-let ((doi (tlon-biblio--query-crossref title
+					       (unless (string= "" author)
+						 author))))
 	(zotra-add-entry-from-search doi)
       (message "No DOI entries found for the given title and author."))))
 
