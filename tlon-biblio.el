@@ -53,7 +53,7 @@
               (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun tlon-biblio--query-crossref (title &optional author)
+(defun tlon-biblio-search-crossref (title &optional author)
   "Query the Crossref database for TITLE and AUTHOR."
   (let* ((url-request-method "GET")
          (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
