@@ -69,7 +69,7 @@
     (tlon-biblio-get-doi-in-json json-string)))
 
 (defun tlon-biblio-zotra-add-entry-from-title ()
-  "Get citation for selected author/title pair and add it to bibfile via its DOI."
+  "Prompt user for title and author and add selection to bibfile via its associated DOI."
   (interactive)
   (let ((title (read-string "Enter title: "))
         (author (read-string "Enter author: ")))
