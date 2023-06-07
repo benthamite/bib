@@ -31,6 +31,7 @@
 (require 'seq)
 
 (defun tlon-biblio-get-doi-in-json (json-string)
+  "Docstring."
   (when-let* ((json-object-type 'alist)
               (json-array-type 'list)
               (json-key-type 'symbol)
@@ -52,6 +53,7 @@
     selected-doi))
 
 (defun tlon-biblio--query-crossref (title author)
+  "Docstring."
   (let* ((url-request-method "GET")
          (url (format "https://api.crossref.org/works?query.bibliographic=%s&query.author=%s"
                       (url-hexify-string title)
@@ -65,6 +67,7 @@
 
 (defun tlon-biblio-zotra-add-entry-from-metadata ()
   (interactive)
+  "Docstring."
   (let ((title (read-string "Enter title: "))
         (author (read-string "Enter author: ")))
     (if-let ((doi (tlon-biblio--query-crossref title author)))
