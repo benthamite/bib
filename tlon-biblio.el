@@ -31,6 +31,7 @@
 (require 'seq)
 (require 'zotra)
 
+(defvar tlon-biblio-version "0.1.0")
 (defun tlon-biblio-get-doi-in-json (json-string)
   "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
