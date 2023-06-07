@@ -47,11 +47,15 @@
 							 " & "))
 					  (title (car (alist-get 'title item)))
 					  (doi (alist-get 'DOI item)))
-                                      (cons (concat author-names " - " title) doi)))
+                                      (cons (concat title " by " (tlon-biblio-reverse-first-last-name author-names)) doi)))
 				  items))
               (selected-string (completing-read "Select a bibliographic entry: " candidates))
               (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
+
+(defun tlon-biblio-reverse-first-last-name (author)
+  "Reverse the order of comma-separated elements in AUTHOR field."
+  (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
 
 (defun tlon-biblio-search-crossref (title &optional author)
   "Query the Crossref database for TITLE and AUTHOR."
@@ -72,7 +76,7 @@
   (auth-source-pass-get "key" (concat "tlon/BAE/isbndb.com/" ps/tlon-email)))
 
 (defun tlon-biblio-search-isbndb (title)
-  "Query the isbndb database for TITLE."
+  "Query the ISBNdb database for TITLE."
   (let* ((url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20" (url-hexify-string title)))
          (url-request-method "GET")
          (url-request-extra-headers
@@ -94,7 +98,7 @@
     (let* ((candidates (mapcar (lambda (book)
                                  (cons (format "%s by %s" 
                                                (plist-get book :title) 
-					       (car (plist-get book :authors))
+					       (tlon-biblio-reverse-first-last-name (car (plist-get book :authors)))
 					       ", ")
 				       (plist-get book :isbn)))
 			       result-list))
