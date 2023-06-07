@@ -29,9 +29,10 @@
 (require 'url-http)
 (require 'json)
 (require 'seq)
+(require 'zotra)
 
 (defun tlon-biblio-get-doi-in-json (json-string)
-  "Docstring."
+  "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
               (json-array-type 'list)
               (json-key-type 'symbol)
@@ -53,7 +54,7 @@
     selected-doi))
 
 (defun tlon-biblio--query-crossref (title author)
-  "Docstring."
+  "Query the Crossref database for TITLE and AUTHOR."
   (let* ((url-request-method "GET")
          (url (format "https://api.crossref.org/works?query.bibliographic=%s&query.author=%s"
                       (url-hexify-string title)
@@ -66,13 +67,13 @@
     (tlon-biblio-get-doi-in-json json-string)))
 
 (defun tlon-biblio-zotra-add-entry-from-metadata ()
+  "Get citation for selected title/author and add it to bibfile via its DOI."
   (interactive)
-  "Docstring."
   (let ((title (read-string "Enter title: "))
         (author (read-string "Enter author: ")))
     (if-let ((doi (tlon-biblio--query-crossref title author)))
 	(zotra-add-entry-from-search doi)
-      (message "No entry found"))))
+      (message "No DOI entries found for the given title and author."))))
 
 (provide 'tlon-biblio)
 ;;; tlon-biblio.el ends here
