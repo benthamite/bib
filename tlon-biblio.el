@@ -32,6 +32,11 @@
 (require 'zotra)
 
 (defvar tlon-biblio-version "0.1.0")
+
+(defun tlon-biblio-reverse-first-last-name (author)
+  "Reverse the order of comma-separated elements in AUTHOR field."
+  (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
+
 (defun tlon-biblio-get-doi-in-json (json-string)
   "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
@@ -53,10 +58,6 @@
               (selected-string (completing-read "Select a bibliographic entry: " candidates))
               (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
-
-(defun tlon-biblio-reverse-first-last-name (author)
-  "Reverse the order of comma-separated elements in AUTHOR field."
-  (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
 
 (defun tlon-biblio-search-crossref (title &optional author)
   "Query the Crossref database for TITLE and AUTHOR."
