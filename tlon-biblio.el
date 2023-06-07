@@ -30,7 +30,7 @@
 (require 'json)
 (require 'seq)
 
-(defun my-select-bib-entry (json-string)
+(defun tlon-biblio-get-doi-in-json (json-string)
   (when-let* ((json-object-type 'alist)
               (json-array-type 'list)
               (json-key-type 'symbol)
@@ -51,7 +51,7 @@
               (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun my-query-crossref (title author)
+(defun tlon-biblio--query-crossref (title author)
   (let* ((url-request-method "GET")
          (url (format "https://api.crossref.org/works?query.bibliographic=%s&query.author=%s"
                       (url-hexify-string title)
