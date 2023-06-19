@@ -112,17 +112,56 @@
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
 
+(defvar tlon-biblio-imdb-key (auth-source-pass-get "key" (concat "chrome/imdb-api.com/" ps/personal-email)))
+
+(defun tlon-biblio-search-imdb (title &optional year)
+  "Prompt user for title and optional year and add selection to bibfile via its IMDb ID."
+  (let* ((encoded-title (url-hexify-string title))
+         (url (format "https://imdb-api.com/en/API/SearchMovie/%s/%s" tlon-biblio-imdb-key encoded-title))
+         (response (request url
+                     :sync t
+                     :type "GET"
+                     :parser 'json-read
+                     :log-level 'warn
+                     :data nil))
+         (status (request-response-status-code response))
+         (data (request-response-data response))
+         (results (when data (cdr (assoc 'results data))))
+         (items (when results
+                  (cl-loop for result across results
+                           for id = (cdr (assoc 'id result))
+                           for result-title = (cdr (assoc 'title result))
+                           for desc = (cdr (assoc 'description result))
+                           for result-year = (progn
+					       (string-match ".*?\\([[:digit:]]\\{4\\}\\)" desc)
+					       (match-string 1 desc))
+                           when (or (string= year "") (string= result-year year))
+                           collect (cons (format "%s (%s)" result-title result-year) id))))
+         (choice (when items (completing-read "Select a movie: " items)))
+         (imdb-id (cdr (assoc choice items))))
+    (or imdb-id
+	(message "No match found for %s (%s)" title (if (string= year "") "Any year" year)))))
+
 (defun tlon-biblio-zotra-add-entry-from-title ()
-  "Prompt user for title and author and add selection to bibfile via its associated DOI."
+  "Prompt user for title and author and add selection to bibfile via its identifier."
   (interactive)
-  (let ((type (completing-read "DOI or ISBN? " '("doi" "isbn") nil t))
-	(title (read-string "Enter title: "))
-	(author (read-string "Enter author: ")))
-    (if-let (identifier (if (string= type "doi")
-			    (tlon-biblio-search-crossref title (unless (string= author "") author))
-			  (tlon-biblio-search-isbndb (format "%s %s" title author))))
-	(zotra-add-entry-from-search identifier)
+  (let* ((type (completing-read "DOI, ISBN or IMDb ID? " '("doi" "isbn" "imdb") nil t))
+	 (title (read-string "title: "))
+	 (extra-prompt (pcase type
+			 ("doi" "author: ")
+			 ("isbn" "author: ")
+			 ("imdb" "year (optional): ")))
+	 (extra (read-string extra-prompt)))
+    (if-let (id (pcase type
+		  ("doi" (tlon-biblio-search-crossref title (unless (string= extra "") extra)))
+		  ("isbn" (tlon-biblio-search-isbndb (format "%s %s" title extra)))
+		  ("imdb" (tlon-biblio-search-imdb title extra))))
+	(pcase type
+	  ("doi" (zotra-add-entry-from-search id))
+	  ("isbn" (zotra-add-entry-from-search id))
+	  ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" id))))
       (user-error "No entries found"))))
 
 (provide 'tlon-biblio)
 ;;; tlon-biblio.el ends here
+
