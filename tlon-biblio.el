@@ -145,20 +145,18 @@
 (defun tlon-biblio-zotra-add-entry-from-title ()
   "Prompt user for title and author and add selection to bibfile via its identifier."
   (interactive)
-  (let* ((type (completing-read "DOI, ISBN or IMDb ID? " '("doi" "isbn" "imdb") nil t))
+  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
 	 (title (read-string "title: "))
-	 (extra-prompt (pcase type
-			 ("doi" "author: ")
-			 ("isbn" "author: ")
-			 ("imdb" "year (optional): ")))
-	 (extra (read-string extra-prompt)))
-    (if-let (id (pcase type
-		  ("doi" (tlon-biblio-search-crossref title (unless (string= extra "") extra)))
-		  ("isbn" (tlon-biblio-search-isbndb (format "%s %s" title extra)))
-		  ("imdb" (tlon-biblio-search-imdb title extra))))
+	 (field (pcase type
+		  ((or "doi" "isbn") "author ")
+		  ("imdb" "year ")))
+	 (extra (read-string (concat field "(optional): ")))
+	 (fun (pcase type
+		((or "doi" "isbn") 'tlon-biblio-search-crossref)
+		("imdb" 'tlon-biblio-search-imdb))))
+    (if-let (id (funcall fun title extra))
 	(pcase type
-	  ("doi" (zotra-add-entry-from-search id))
-	  ("isbn" (zotra-add-entry-from-search id))
+	  ((or "doi" "isbn") (zotra-add-entry-from-search id))
 	  ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" id))))
       (user-error "No entries found"))))
 
