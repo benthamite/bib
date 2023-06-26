@@ -64,7 +64,8 @@
   (let* ((url-request-method "GET")
 	 (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
 			      (url-hexify-string title))
-		      (when author
+		      (when (and author
+				 (not (string-empty-p author)))
 			(format "&query.author=%s"
 				(url-hexify-string author)))))
 	 (url-buffer (url-retrieve-synchronously url))
@@ -135,7 +136,7 @@
                            for result-year = (progn
 					       (string-match ".*?\\([[:digit:]]\\{4\\}\\)" desc)
 					       (match-string 1 desc))
-                           when (or (string= year "") (string= result-year year))
+                           when (or (string-empty-p year) (string= result-year year))
                            collect (cons (format "%s (%s)" result-title result-year) id))))
          (choice (when items (completing-read "Select a movie: " items)))
          (imdb-id (cdr (assoc choice items))))
