@@ -31,7 +31,7 @@
 (require 'seq)
 (require 'zotra)
 
-(defvar tlon-biblio-version "0.1.0")
+(defvar tlon-biblio-version "0.1.1")
 
 (defun tlon-biblio-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
@@ -59,9 +59,11 @@
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun tlon-biblio-search-crossref (title &optional author)
+(defun tlon-biblio-search-crossref (&optional title author)
   "Query the Crossref database for TITLE and AUTHOR."
-  (let* ((url-request-method "GET")
+  (let* ((title (or title (read-from-minibuffer "Enter title: ")))
+	 (author (or author (read-from-minibuffer "Enter author: ")))
+	 (url-request-method "GET")
 	 (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
 			      (url-hexify-string title))
 		      (when (and author
@@ -78,9 +80,12 @@
 (defvar tlon-biblio-isbndb-key
   (auth-source-pass-get "key" (concat "tlon/BAE/isbndb.com/" ps/tlon-email)))
 
-(defun tlon-biblio-search-isbndb (title)
-  "Query the ISBNdb database for TITLE."
-  (let* ((url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20" (url-hexify-string title)))
+(defun tlon-biblio-search-isbndb (&optional query)
+  "Query the ISBNdb database for QUERY.
+The query may include the title, author, or ISBN of the book."
+  (interactive)
+  (let* ((query (or query (read-string "Enter query: ")))
+	 (url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20" (url-hexify-string query)))
 	 (url-request-method "GET")
 	 (url-request-extra-headers
 	  `(("Accept" . "application/json")
@@ -113,53 +118,44 @@
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
 
-(defvar tlon-biblio-imdb-key (auth-source-pass-get "key" (concat "chrome/imdb-api.com/" ps/personal-email)))
+(defvar tlon-biblio-omdb-key
+  (auth-source-pass-get 'secret "chrome/omdbapi.com"))
 
-(defun tlon-biblio-search-imdb (title &optional year)
-  "Prompt user for title and optional year and add selection to bibfile via its IMDb ID."
-  (let* ((encoded-title (url-hexify-string title))
-         (url (format "https://imdb-api.com/en/API/SearchMovie/%s/%s" tlon-biblio-imdb-key encoded-title))
-         (response (request url
-                     :sync t
-                     :type "GET"
-                     :parser 'json-read
-                     :log-level 'warn
-                     :data nil))
-         (status (request-response-status-code response))
-         (data (request-response-data response))
-         (results (when data (cdr (assoc 'results data))))
-         (items (when results
-                  (cl-loop for result across results
-                           for id = (cdr (assoc 'id result))
-                           for result-title = (cdr (assoc 'title result))
-                           for desc = (cdr (assoc 'description result))
-                           for result-year = (progn
-					       (string-match ".*?\\([[:digit:]]\\{4\\}\\)" desc)
-					       (match-string 1 desc))
-                           when (or (string-empty-p year) (string= result-year year))
-                           collect (cons (format "%s (%s)" result-title result-year) id))))
-         (choice (when items (completing-read "Select a movie: " items)))
-         (imdb-id (cdr (assoc choice items))))
-    (or imdb-id
-	(message "No match found for %s (%s)" title (if (string= year "") "Any year" year)))))
+(defun tlon-biblio-search-imdb (&optional title)
+  "Prompt user for TITLE and YEAR, then add film to bibfile via its IMDb ID.
+This command uses the OMDb API, which requires an API key.  You can
+get a free key at http://www.omdbapi.com/."
+  (interactive)
+  (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
+         (url (format 
+	       "http://www.omdbapi.com/?s=%s&apikey=%s"
+	       (url-hexify-string title) tlon-biblio-omdb-key)))
+    (with-current-buffer (url-retrieve-synchronously url)
+      (goto-char (point-min))
+      (search-forward "\n\n")
+      (let* ((json-object-type 'plist)
+             (json (json-read))
+             (movies (plist-get json :Search)))
+        (kill-buffer)
+        (if movies
+            (let* ((candidates (mapcar (lambda (movie) 
+                                         (cons (format "%s (%s)"
+						       (plist-get movie :Title)
+						       (plist-get movie :Year))
+					       (plist-get movie :imdbID)))
+				       movies))
+                   (movie (assoc (completing-read "Select a movie: " candidates) candidates)))
+	      (cdr movie))
+          (user-error "No matching movies found"))))))
 
 (defun tlon-biblio-zotra-add-entry-from-title ()
   "Prompt user for title and author and add selection to bibfile via its identifier."
   (interactive)
-  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
-	 (title (read-string "title: "))
-	 (field (pcase type
-		  ((or "doi" "isbn") "author ")
-		  ("imdb" "year ")))
-	 (extra (read-string (concat field "(optional): ")))
-	 (fun (pcase type
-		((or "doi" "isbn") 'tlon-biblio-search-crossref)
-		("imdb" 'tlon-biblio-search-imdb))))
-    (if-let (id (funcall fun title extra))
-	(pcase type
-	  ((or "doi" "isbn") (zotra-add-entry-from-search id))
-	  ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" id))))
-      (user-error "No entries found"))))
+  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t)))
+    (pcase type
+      ("doi" (zotra-add-entry-from-search (tlon-biblio-search-crossref)))
+      ("isbn" (zotra-add-entry-from-search (tlon-biblio-search-isbndb)))
+      ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" (tlon-biblio-search-imdb)))))))
 
 (provide 'tlon-biblio)
 ;;; tlon-biblio.el ends here
