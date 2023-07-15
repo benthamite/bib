@@ -62,7 +62,7 @@
 (defun tlon-biblio-search-crossref (&optional title author)
   "Query the Crossref database for TITLE and AUTHOR."
   (let* ((title (or title (read-from-minibuffer "Enter title: ")))
-	 (author (or author (read-from-minibuffer "Enter author: ")))
+	 (author (or author (read-from-minibuffer "Enter author (optional): ")))
 	 (url-request-method "GET")
 	 (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
 			      (url-hexify-string title))
@@ -84,7 +84,7 @@
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
   (interactive)
-  (let* ((query (or query (read-string "Enter query: ")))
+  (let* ((query (or query (read-string "Enter query (title and/or author): ")))
 	 (url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20" (url-hexify-string query)))
 	 (url-request-method "GET")
 	 (url-request-extra-headers
@@ -127,7 +127,7 @@ This command uses the OMDb API, which requires an API key.  You can
 get a free key at http://www.omdbapi.com/."
   (interactive)
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
-         (url (format 
+         (url (format
 	       "http://www.omdbapi.com/?s=%s&apikey=%s"
 	       (url-hexify-string title) tlon-biblio-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
