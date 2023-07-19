@@ -121,6 +121,9 @@ The query may include the title, author, or ISBN of the book."
 (defvar tlon-biblio-omdb-key
   (auth-source-pass-get 'secret "chrome/omdbapi.com"))
 
+(defvar tlon-biblio-tmdb-key
+  (auth-source-pass-get "key" "chrome/themoviedb.org/stafforini"))
+
 (defun tlon-biblio-search-imdb (&optional title)
   "Prompt user for TITLE and YEAR, then add film to bibfile via its IMDb ID.
 This command uses the OMDb API, which requires an API key.  You can
