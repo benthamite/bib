@@ -126,31 +126,31 @@ The query may include the title, author, or ISBN of the book."
   (auth-source-pass-get "key" "chrome/themoviedb.org/stafforini"))
 
 (defun tlon-biblio-search-imdb (&optional title)
-  "Prompt user for TITLE and YEAR, then add film to bibfile via its IMDb ID.
+  "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
 This command uses the OMDb API, which requires an API key.  You can
 get a free key at http://www.omdbapi.com/."
   (interactive)
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
-         (url (format
+	 (url (format
 	       "http://www.omdbapi.com/?s=%s&apikey=%s"
 	       (url-hexify-string title) tlon-biblio-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
       (goto-char (point-min))
       (search-forward "\n\n")
       (let* ((json-object-type 'plist)
-             (json (json-read))
-             (movies (plist-get json :Search)))
-        (kill-buffer)
-        (if movies
-            (let* ((candidates (mapcar (lambda (movie) 
-                                         (cons (format "%s (%s)"
+	     (json (json-read))
+	     (movies (plist-get json :Search)))
+	(kill-buffer)
+	(if movies
+	    (let* ((candidates (mapcar (lambda (movie)
+					 (cons (format "%s (%s)"
 						       (plist-get movie :Title)
 						       (plist-get movie :Year))
 					       (plist-get movie :imdbID)))
 				       movies))
-                   (movie (assoc (completing-read "Select a movie: " candidates) candidates)))
+		   (movie (assoc (completing-read "Select a movie: " candidates) candidates)))
 	      (cdr movie))
-          (user-error "No matching movies found"))))))
+	  (user-error "No matching movies found"))))))
 
 (defun tlon-biblio-zotra-add-entry-from-title ()
   "Prompt user for title and author and add selection to bibfile via its identifier."
