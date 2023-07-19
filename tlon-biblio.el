@@ -29,6 +29,7 @@
 (require 'url-http)
 (require 'json)
 (require 'seq)
+(require 'ebib)
 (require 'zotra)
 
 (defvar tlon-biblio-version "0.1.1")
