@@ -159,6 +159,28 @@ get a free key at http://www.omdbapi.com/."
       ("doi" (zotra-add-entry-from-search (tlon-biblio-search-crossref)))
       ("isbn" (zotra-add-entry-from-search (tlon-biblio-search-isbndb)))
       ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" (tlon-biblio-search-imdb)))))))
+(defun tlon-biblio-tmdb-search-first-id (title)
+  "Fetch TITLE from TMDB API and return the TMDb of the first movie."
+  (let* ((search-url (format "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
+			     tlon-biblio-tmdb-key (url-hexify-string title))))
+    (with-current-buffer (url-retrieve-synchronously search-url)
+      (goto-char url-http-end-of-headers)
+      (let* ((response (json-read))
+	     (results (cdr (assoc 'results response))) ; Extract results vector
+	     (first-result (elt results 0)) ; Get the first movie
+	     (id (cdr (assoc 'id first-result)))) ; Extract the ID
+	id)))) ; Return the IMDb ID
+
+(defun tlon-biblio-tmdb-to-imdb-id (tmdb-id)
+  "Fetch TMDB-ID from TMDB API and return the IMDb ID of the movie."
+  (let* ((movie-url (format
+		     "https://api.themoviedb.org/3/movie/%s/external_ids?api_key=%s"
+		     tmdb-id tlon-biblio-tmdb-key)))
+    (with-current-buffer (url-retrieve-synchronously movie-url)
+      (goto-char url-http-end-of-headers)
+      (let* ((response (json-read))
+	     (imdb-id (cdr (assoc 'imdb_id response)))) ; Extract the IMDb ID
+	imdb-id))))
 
 (provide 'tlon-biblio)
 ;;; tlon-biblio.el ends here
