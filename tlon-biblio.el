@@ -182,6 +182,19 @@ get a free key at http://www.omdbapi.com/."
 	     (imdb-id (cdr (assoc 'imdb_id response)))) ; Extract the IMDb ID
 	imdb-id))))
 
+(defun tlon-biblio-translate-title-to-english (title)
+  "Return English title of TITLE.
+If TITLE is itself an English title, return it unchanged."
+  (let* ((search-url (format
+		      "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
+		      tlon-biblio-tmdb-key (url-hexify-string title))))
+    (with-current-buffer (url-retrieve-synchronously search-url)
+      (goto-char url-http-end-of-headers)
+      (let* ((response (json-read))
+	     (results (cdr (assoc 'results response))) ; Extract results vector
+	     (first-result (elt results 0)) ; Get the first movie
+	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
+	english-title))))
+
 (provide 'tlon-biblio)
 ;;; tlon-biblio.el ends here
-
