@@ -159,7 +159,10 @@ get a free key at http://www.omdbapi.com/."
     (pcase type
       ("doi" (zotra-add-entry-from-search (tlon-biblio-search-crossref)))
       ("isbn" (zotra-add-entry-from-search (tlon-biblio-search-isbndb)))
-      ("imdb" (zotra-add-entry-from-url (concat "https://www.imdb.com/title/" (tlon-biblio-search-imdb)))))))
+      ("imdb" (progn
+		(zotra-add-entry-from-url (concat "https://www.imdb.com/title/" (tlon-biblio-search-imdb)))
+		(ps/ebib-set-id))))))
+
 (defun tlon-biblio-tmdb-search-first-id (title)
   "Fetch TITLE from TMDB API and return the TMDb of the first movie."
   (let* ((search-url (format "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
