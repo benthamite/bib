@@ -32,7 +32,17 @@
 (require 'ebib)
 (require 'zotra)
 
+;;; Variables
+
 (defvar tlon-biblio-version "0.1.1")
+
+(defvar tlon-biblio-isbndb-key)
+
+(defvar tlon-biblio-omdb-key)
+
+(defvar tlon-biblio-tmdb-key)
+
+;;; Functions
 
 (defun tlon-biblio-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
@@ -78,9 +88,6 @@
 			(buffer-substring-no-properties (point) (point-max)))))
     (message (tlon-biblio-get-doi-in-json json-string))))
 
-(defvar tlon-biblio-isbndb-key
-  (auth-source-pass-get "key" (concat "tlon/BAE/isbndb.com/" ps/tlon-email)))
-
 (defun tlon-biblio-search-isbndb (&optional query)
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
@@ -118,12 +125,6 @@ The query may include the title, author, or ISBN of the book."
 			       result-list))
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
-
-(defvar tlon-biblio-omdb-key
-  (auth-source-pass-get 'secret "chrome/omdbapi.com"))
-
-(defvar tlon-biblio-tmdb-key
-  (auth-source-pass-get "key" "chrome/themoviedb.org/stafforini"))
 
 (defun tlon-biblio-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
