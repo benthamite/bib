@@ -200,5 +200,14 @@ If TITLE is itself an English title, return it unchanged."
 	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
 	english-title))))
 
+(defun tlon-biblio-libgen (query)
+  "Search for QUERY in Library Genesis."
+  (interactive "sQuery: ")
+  (let ((app "libby"))
+    (unless (executable-find app)
+      (user-error "Please install %s (https://github.com/carterprince/libby)" app))
+    (term (format "%s '%s' --no-view --output-dir %s" app query ps/dir-downloads))))
+
 (provide 'tlon-biblio)
+
 ;;; tlon-biblio.el ends here
