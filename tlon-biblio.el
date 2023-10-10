@@ -207,7 +207,7 @@ If TITLE is itself an English title, return it unchanged."
   (let ((app "libby"))
     (unless (executable-find app)
       (user-error "Please install %s (https://github.com/carterprince/libby)" app))
-    (term (format "%s '%s' --no-view --output-dir %s" app query ps/dir-downloads))))
+    (term (format "%s '%s' --no-view --output-dir %s --lang spa" app query ps/dir-downloads))))
 
 (provide 'tlon-biblio)
 
