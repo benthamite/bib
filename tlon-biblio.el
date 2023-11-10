@@ -153,16 +153,6 @@ get a free key at http://www.omdbapi.com/."
 	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
-(defun tlon-biblio-zotra-add-entry-from-title ()
-  "Prompt user for title and author and add selection to bibfile via its identifier."
-  (interactive)
-  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t)))
-    (pcase type
-      ("doi" (zotra-add-entry-from-search (tlon-biblio-search-crossref)))
-      ("isbn" (zotra-add-entry-from-search (tlon-biblio-search-isbndb)))
-      ("imdb" (progn
-		(zotra-add-entry-from-url (concat "https://www.imdb.com/title/" (tlon-biblio-search-imdb)))
-		(ps/ebib-set-id))))))
 
 (defun tlon-biblio-tmdb-search-first-id (title)
   "Fetch TITLE from TMDB API and return the TMDb of the first movie."
@@ -200,6 +190,16 @@ If TITLE is itself an English title, return it unchanged."
 	     (first-result (elt results 0)) ; Get the first movie
 	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
 	english-title))))
+
+(defun tlon-biblio-zotra-add-entry-from-title ()
+  "Add bibliography entry from its title."
+  (interactive)
+  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
+	 (id (pcase type
+	       ("doi" (tlon-biblio-search-crossref))
+	       ("isbn" (tlon-biblio-search-isbn))
+	       ("imdb" (tlon-biblio-search-imdb)))))
+    (zotra-add-entry id)))
 
 (defun tlon-biblio-libgen (query)
   "Search for QUERY in Library Genesis."
