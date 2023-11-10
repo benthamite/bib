@@ -89,7 +89,7 @@
 			(buffer-substring-no-properties (point) (point-max)))))
     (message (tlon-biblio-get-doi-in-json json-string))))
 
-(defun tlon-biblio-search-isbndb (&optional query)
+(defun tlon-biblio-search-isbn (&optional query)
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
   (interactive)
