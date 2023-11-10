@@ -153,19 +153,6 @@ get a free key at http://www.omdbapi.com/."
 	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
-
-
-(defun tlon-biblio-tmdb-to-imdb-id (tmdb-id)
-  "Fetch TMDB-ID from TMDB API and return the IMDb ID of the movie."
-  (let* ((movie-url (format
-		     "https://api.themoviedb.org/3/movie/%s/external_ids?api_key=%s"
-		     tmdb-id tlon-biblio-tmdb-key)))
-    (with-current-buffer (url-retrieve-synchronously movie-url)
-      (goto-char url-http-end-of-headers)
-      (let* ((response (json-read))
-	     (imdb-id (cdr (assoc 'imdb_id response)))) ; Extract the IMDb ID
-	imdb-id))))
-
 (defun tlon-biblio-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged."
