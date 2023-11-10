@@ -150,7 +150,7 @@ get a free key at http://www.omdbapi.com/."
 					       (plist-get movie :imdbID)))
 				       movies))
 		   (movie (assoc (completing-read "Select a movie: " candidates) candidates)))
-	      (cdr movie))
+	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
 (defun tlon-biblio-zotra-add-entry-from-title ()
