@@ -119,8 +119,7 @@ The query may include the title, author, or ISBN of the book."
 				   (cons (if authors
 					     (format "%s by %s"
 						     title
-						     (tlon-biblio-reverse-first-last-name (car authors))
-						     ", ")
+						     (tlon-biblio-reverse-first-last-name (car authors)))
 					   (format "%s, " title))
 					 isbn)))
 			       result-list))
