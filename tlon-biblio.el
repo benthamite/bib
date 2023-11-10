@@ -32,7 +32,8 @@
 (require 'ebib)
 (require 'zotra)
 
-;;; Variables
+;;; Code:
+;;;; Variables
 
 (defvar tlon-biblio-version "0.1.1")
 
@@ -42,7 +43,7 @@
 
 (defvar tlon-biblio-tmdb-key)
 
-;;; Functions
+;;;; Functions
 
 (defun tlon-biblio-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
