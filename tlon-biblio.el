@@ -187,7 +187,7 @@ get a free key at http://www.omdbapi.com/."
 	     (imdb-id (cdr (assoc 'imdb_id response)))) ; Extract the IMDb ID
 	imdb-id))))
 
-(defun tlon-biblio-translate-title-to-english (title)
+(defun tlon-biblio-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged."
   (let* ((search-url (format
