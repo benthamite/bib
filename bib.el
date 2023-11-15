@@ -116,7 +116,7 @@ The query may include the title, author, or ISBN of the book."
 	 (url-request-method "GET")
 	 (url-request-extra-headers
 	  `(("Accept" . "application/json")
-	    ("Authorization" . ,biblio-isbndb-key)))
+	    ("Authorization" . ,bib-isbndb-key)))
 	 (url-buffer (url-retrieve-synchronously url))
 	 (json-object-type 'plist)
 	 (json-key-type 'keyword)
