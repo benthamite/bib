@@ -37,24 +37,37 @@
 (require 'json)
 (require 'seq)
 
-;;; Code:
+;;;; User options
+
+(defgroup biblio ()
+  "Rudimentary support for bibliographic information retrieval."
+  :group 'bibtex)
+
 ;;;; Variables
 
-(defvar tlon-biblio-version "0.1.1")
+(defcustom biblio-isbndb-key ""
+  "Private key for the `ISBNdb' database."
+  :type 'string
+  :group 'biblio)
 
-(defvar tlon-biblio-isbndb-key)
+(defcustom biblio-omdb-key ""
+  "Private key for The Open Movie Database."
+  :type 'string
+  :group 'biblio)
 
-(defvar tlon-biblio-omdb-key)
-
-(defvar tlon-biblio-tmdb-key)
+(defcustom biblio-tmdb-key ""
+  "Private key for The Movie Database.
+This key is only used to translate the title of a film into English."
+  :type 'string
+  :group 'biblio)
 
 ;;;; Functions
 
-(defun tlon-biblio-reverse-first-last-name (author)
+(defun biblio-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
   (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
 
-(defun tlon-biblio-get-doi-in-json (json-string)
+(defun biblio-get-doi-in-json (json-string)
   "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
 	      (json-array-type 'list)
@@ -70,13 +83,13 @@
 							 " & "))
 					  (title (car (alist-get 'title item)))
 					  (doi (alist-get 'DOI item)))
-				      (cons (concat title " by " (tlon-biblio-reverse-first-last-name author-names)) doi)))
+				      (cons (concat title " by " (biblio-reverse-first-last-name author-names)) doi)))
 				  items))
 	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun tlon-biblio-search-crossref (&optional title author)
+(defun biblio-search-crossref (&optional title author)
   "Query the Crossref database for TITLE and AUTHOR."
   (let* ((title (or title (read-from-minibuffer "Enter title: ")))
 	 (author (or author (read-from-minibuffer "Enter author (optional): ")))
@@ -92,9 +105,9 @@
 			(goto-char (point-min))
 			(re-search-forward "^$")
 			(buffer-substring-no-properties (point) (point-max)))))
-    (message (tlon-biblio-get-doi-in-json json-string))))
+    (message (biblio-get-doi-in-json json-string))))
 
-(defun tlon-biblio-search-isbn (&optional query)
+(defun biblio-search-isbn (&optional query)
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
   (interactive)
@@ -103,7 +116,7 @@ The query may include the title, author, or ISBN of the book."
 	 (url-request-method "GET")
 	 (url-request-extra-headers
 	  `(("Accept" . "application/json")
-	    ("Authorization" . ,tlon-biblio-isbndb-key)))
+	    ("Authorization" . ,biblio-isbndb-key)))
 	 (url-buffer (url-retrieve-synchronously url))
 	 (json-object-type 'plist)
 	 (json-key-type 'keyword)
@@ -124,14 +137,14 @@ The query may include the title, author, or ISBN of the book."
 				   (cons (if authors
 					     (format "%s by %s"
 						     title
-						     (tlon-biblio-reverse-first-last-name (car authors)))
+						     (biblio-reverse-first-last-name (car authors)))
 					   (format "%s, " title))
 					 isbn)))
 			       result-list))
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
 
-(defun tlon-biblio-search-imdb (&optional title)
+(defun biblio-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
 This command uses the OMDb API, which requires an API key.  You can
 get a free key at http://www.omdbapi.com/."
@@ -139,7 +152,7 @@ get a free key at http://www.omdbapi.com/."
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
 	 (url (format
 	       "http://www.omdbapi.com/?s=%s&apikey=%s"
-	       (url-hexify-string title) tlon-biblio-omdb-key)))
+	       (url-hexify-string title) biblio-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
       (goto-char (point-min))
       (search-forward "\n\n")
@@ -158,12 +171,12 @@ get a free key at http://www.omdbapi.com/."
 	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
-(defun tlon-biblio-translate-title-into-english (title)
+(defun biblio-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged."
   (let* ((search-url (format
 		      "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
-		      tlon-biblio-tmdb-key (url-hexify-string title))))
+		      biblio-tmdb-key (url-hexify-string title))))
     (with-current-buffer (url-retrieve-synchronously search-url)
       (goto-char url-http-end-of-headers)
       (let* ((response (json-read))
@@ -172,17 +185,18 @@ If TITLE is itself an English title, return it unchanged."
 	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
 	english-title))))
 
-(defun tlon-biblio-zotra-add-entry-from-title ()
+(defun biblio-zotra-add-entry-from-title ()
   "Add bibliography entry from its title."
   (interactive)
+  (require 'zotra)
   (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
 	 (id (pcase type
-	       ("doi" (tlon-biblio-search-crossref))
-	       ("isbn" (tlon-biblio-search-isbn))
-	       ("imdb" (tlon-biblio-search-imdb)))))
+	       ("doi" (biblio-search-crossref))
+	       ("isbn" (biblio-search-isbn))
+	       ("imdb" (biblio-search-imdb)))))
     (zotra-add-entry id)))
 
-(defun tlon-biblio-libgen (query)
+(defun biblio-libgen (query)
   "Search for QUERY in Library Genesis."
   (interactive "sQuery: ")
   (let ((app "libby"))
@@ -190,6 +204,6 @@ If TITLE is itself an English title, return it unchanged."
       (user-error "Please install %s (https://github.com/carterprince/libby)" app))
     (term (format "%s '%s' --no-view --output-dir %s --lang spa" app query ps/dir-downloads))))
 
-(provide 'tlon-biblio)
+(provide 'biblio)
 
-;;; tlon-biblio.el ends here
+;;; biblio.el ends here
