@@ -1,9 +1,9 @@
-;;; biblio.el --- Rudimentary support for bibliographic information retrieval. -*- lexical-binding: t -*-
+;;; bib.el --- Rudimentary support for bibliographic information retrieval. -*- lexical-binding: t -*-
 
 ;; Author: Pablo Stafforini
 ;; Maintainer: Pablo Stafforini
 ;; Version: 0.1.0
-;; Homepage: https://github.com/benthamite/biblio
+;; Homepage: https://github.com/benthamite/bib
 
 
 ;; This file is not part of GNU Emacs
@@ -39,35 +39,35 @@
 
 ;;;; User options
 
-(defgroup biblio ()
+(defgroup bib ()
   "Rudimentary support for bibliographic information retrieval."
   :group 'bibtex)
 
 ;;;; Variables
 
-(defcustom biblio-isbndb-key ""
+(defcustom bib-isbndb-key ""
   "Private key for the `ISBNdb' database."
   :type 'string
-  :group 'biblio)
+  :group 'bib)
 
-(defcustom biblio-omdb-key ""
+(defcustom bib-omdb-key ""
   "Private key for The Open Movie Database."
   :type 'string
-  :group 'biblio)
+  :group 'bib)
 
-(defcustom biblio-tmdb-key ""
+(defcustom bib-tmdb-key ""
   "Private key for The Movie Database.
 This key is only used to translate the title of a film into English."
   :type 'string
-  :group 'biblio)
+  :group 'bib)
 
 ;;;; Functions
 
-(defun biblio-reverse-first-last-name (author)
+(defun bib-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
   (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
 
-(defun biblio-get-doi-in-json (json-string)
+(defun bib-get-doi-in-json (json-string)
   "Return DOI for selected candidate in JSON-STRING."
   (when-let* ((json-object-type 'alist)
 	      (json-array-type 'list)
@@ -83,13 +83,13 @@ This key is only used to translate the title of a film into English."
 							 " & "))
 					  (title (car (alist-get 'title item)))
 					  (doi (alist-get 'DOI item)))
-				      (cons (concat title " by " (biblio-reverse-first-last-name author-names)) doi)))
+				      (cons (concat title " by " (bib-reverse-first-last-name author-names)) doi)))
 				  items))
 	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
-(defun biblio-search-crossref (&optional title author)
+(defun bib-search-crossref (&optional title author)
   "Query the Crossref database for TITLE and AUTHOR."
   (let* ((title (or title (read-from-minibuffer "Enter title: ")))
 	 (author (or author (read-from-minibuffer "Enter author (optional): ")))
@@ -105,9 +105,9 @@ This key is only used to translate the title of a film into English."
 			(goto-char (point-min))
 			(re-search-forward "^$")
 			(buffer-substring-no-properties (point) (point-max)))))
-    (message (biblio-get-doi-in-json json-string))))
+    (message (bib-get-doi-in-json json-string))))
 
-(defun biblio-search-isbn (&optional query)
+(defun bib-search-isbn (&optional query)
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
   (interactive)
@@ -137,14 +137,14 @@ The query may include the title, author, or ISBN of the book."
 				   (cons (if authors
 					     (format "%s by %s"
 						     title
-						     (biblio-reverse-first-last-name (car authors)))
+						     (bib-reverse-first-last-name (car authors)))
 					   (format "%s, " title))
 					 isbn)))
 			       result-list))
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
 
-(defun biblio-search-imdb (&optional title)
+(defun bib-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
 This command uses the OMDb API, which requires an API key.  You can
 get a free key at http://www.omdbapi.com/."
@@ -152,7 +152,7 @@ get a free key at http://www.omdbapi.com/."
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
 	 (url (format
 	       "http://www.omdbapi.com/?s=%s&apikey=%s"
-	       (url-hexify-string title) biblio-omdb-key)))
+	       (url-hexify-string title) bib-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
       (goto-char (point-min))
       (search-forward "\n\n")
@@ -171,12 +171,12 @@ get a free key at http://www.omdbapi.com/."
 	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
-(defun biblio-translate-title-into-english (title)
+(defun bib-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged."
   (let* ((search-url (format
 		      "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
-		      biblio-tmdb-key (url-hexify-string title))))
+		      bib-tmdb-key (url-hexify-string title))))
     (with-current-buffer (url-retrieve-synchronously search-url)
       (goto-char url-http-end-of-headers)
       (let* ((response (json-read))
@@ -185,18 +185,18 @@ If TITLE is itself an English title, return it unchanged."
 	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
 	english-title))))
 
-(defun biblio-zotra-add-entry-from-title ()
+(defun bib-zotra-add-entry-from-title ()
   "Add bibliography entry from its title."
   (interactive)
   (require 'zotra)
   (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
 	 (id (pcase type
-	       ("doi" (biblio-search-crossref))
-	       ("isbn" (biblio-search-isbn))
-	       ("imdb" (biblio-search-imdb)))))
+	       ("doi" (bib-search-crossref))
+	       ("isbn" (bib-search-isbn))
+	       ("imdb" (bib-search-imdb)))))
     (zotra-add-entry id)))
 
-(defun biblio-libgen (query)
+(defun bib-libgen (query)
   "Search for QUERY in Library Genesis."
   (interactive "sQuery: ")
   (let ((app "libby"))
@@ -204,6 +204,6 @@ If TITLE is itself an English title, return it unchanged."
       (user-error "Please install %s (https://github.com/carterprince/libby)" app))
     (term (format "%s '%s' --no-view --output-dir %s --lang spa" app query ps/dir-downloads))))
 
-(provide 'biblio)
+(provide 'bib)
 
-;;; biblio.el ends here
+;;; bib.el ends here
