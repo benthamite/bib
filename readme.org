@@ -1,3 +1,3 @@
-#+title: Tlon Biblio
+#+title: Biblio
 
-~tlon biblio~ is a repository of convenience bibliographic Emacs functions to be used by the Tlön team.
+~biblio~ provides rudimentary support for retrieving bibliographic information for books, papers and films. By searching for title and/or author, the package determines the associated unique identifier (an ISBN, a DOI, or an IMDB ID, respectively), which is then used to retrieve the relevant information and generate the corresponding bibtex entry.
