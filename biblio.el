@@ -1,10 +1,9 @@
-;;; tlon-biblio.el --- A collection of convenience functions for bibliography management. -*- lexical-binding: t -*-
+;;; biblio.el --- Rudimentary support for bibliographic information retrieval. -*- lexical-binding: t -*-
 
 ;; Author: Pablo Stafforini
 ;; Maintainer: Pablo Stafforini
 ;; Version: 0.1.0
-;; Homepage: https://tlon.team
-;; Keywords: convenience tools
+;; Homepage: https://github.com/benthamite/biblio
 
 
 ;; This file is not part of GNU Emacs
@@ -24,6 +23,14 @@
 
 
 ;;; Commentary:
+
+;; This package provides rudimentary support for retrieving bibliographic
+;; information for books, papers and films. By searching for title and/or
+;; author, the package determines the associated unique identifier (an ISBN, a
+;; DOI, or an IMDB ID, respectively), which is then used to retrieve the
+;; relevant information and generate the corresponding bibtex entry.
+
+;;; Code:
 
 (require 'url)
 (require 'url-http)
