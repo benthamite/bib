@@ -36,8 +36,6 @@
 (require 'url-http)
 (require 'json)
 (require 'seq)
-(require 'ebib)
-(require 'zotra)
 
 ;;; Code:
 ;;;; Variables
