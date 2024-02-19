@@ -107,6 +107,28 @@ This key is only used to translate the title of a film into English."
 			(buffer-substring-no-properties (point) (point-max)))))
     (message (bib-get-doi-in-json json-string))))
 
+(defun bib-fetch-abstract-from-crossref (doi)
+  "Return the abstract of the work with DOI."
+  (let ((url (format "https://api.crossref.org/works/%s" doi)))
+    (message "Trying to find abstract for %s with `crossref'..." doi)
+    (with-current-buffer (url-retrieve-synchronously url)
+      (goto-char (point-min))
+      (if (search-forward-regexp "HTTP/.* 404" nil t) ; check for 404 not found
+          (progn
+            (kill-buffer)
+            nil)
+        (re-search-forward "^$")
+        (delete-region (point) (point-min))
+        (let* ((json-object-type 'plist)
+               (json-array-type 'list)
+               (json (json-read))
+               (message-plist (plist-get json :message)))
+	  (kill-buffer)
+          (when-let ((abstract (plist-get message-plist :abstract)))
+	    abstract))))))
+
+;;;; ISBN
+
 (defun bib-search-isbn (&optional query)
   "Query the ISBNdb database for QUERY.
 The query may include the title, author, or ISBN of the book."
@@ -143,6 +165,25 @@ The query may include the title, author, or ISBN of the book."
 			       result-list))
 	   (selection (completing-read "Select a book: " candidates)))
       (cdr (assoc selection candidates)))))
+
+(defun bib-fetch-abstract-from-google-books (isbn)
+  "Return the abstract of the book with ISBN."
+  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s" isbn)))
+    (message "Trying to find abstract for %s with `Google Books'..." isbn)
+    (with-current-buffer (url-retrieve-synchronously url)
+      (goto-char (point-min))
+      (re-search-forward "^$")
+      (delete-region (point) (point-min))
+      (let* ((json-object-type 'plist)
+             (json-array-type 'list)
+             (json (json-read))
+             (items (plist-get json :items))
+             (volume-info (and items (plist-get (car items) :volumeInfo)))
+             (description (and volume-info (plist-get volume-info :description))))
+        (kill-buffer)
+        description))))
+
+;;;; imdb
 
 (defun bib-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
