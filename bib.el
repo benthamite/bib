@@ -36,6 +36,7 @@
 (require 'url-http)
 (require 'json)
 (require 'seq)
+(require 'zotra)
 
 ;;;; User options
 
