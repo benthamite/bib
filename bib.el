@@ -223,6 +223,7 @@ get a free key at http://www.omdbapi.com/."
 	      (concat "https://www.imdb.com/title/" (cdr movie)))
 	  (user-error "No matching movies found"))))))
 
+(defvar url-http-end-of-headers)
 (defun bib-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged."
