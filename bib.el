@@ -170,7 +170,8 @@ The query may include the title, author, or ISBN of the book."
 
 (defun bib-fetch-abstract-from-google-books (isbn)
   "Return the abstract of the book with ISBN."
-  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s" isbn)))
+  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s" isbn))
+        (description nil))
     (message "Trying to find abstract for %s with `Google Books'..." isbn)
     (with-current-buffer (url-retrieve-synchronously url)
       (goto-char (point-min))
@@ -180,10 +181,12 @@ The query may include the title, author, or ISBN of the book."
              (json-array-type 'list)
              (json (json-read))
              (items (plist-get json :items))
-             (volume-info (and items (plist-get (car items) :volumeInfo)))
-             (description (and volume-info (plist-get volume-info :description))))
-        (kill-buffer)
-        description))))
+             (volume-info (and items (plist-get (car items) :volumeInfo))))
+        (setq description (and volume-info (plist-get volume-info :description)))))
+    (when (get-buffer url)
+      (kill-buffer url))
+    description))
+
 
 ;;;; imdb
 
