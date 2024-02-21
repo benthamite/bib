@@ -100,12 +100,14 @@ This key is only used to translate the title of a film into English."
 				 (not (string-empty-p author)))
 			(format "&query.author=%s"
 				(url-hexify-string author)))))
-	 (url-buffer (url-retrieve-synchronously url))
-	 (json-string (with-current-buffer url-buffer
+	 (url-buffer nil)
+	 (json-string nil))
+    (setq url-buffer (url-retrieve-synchronously url))
+    (setq json-string (with-current-buffer url-buffer
 			(goto-char (point-min))
 			(re-search-forward "^$")
-			(buffer-substring-no-properties (point) (point-max)))))
-    (message (bib-get-doi-in-json json-string))))
+			(buffer-substring-no-properties (point) (point-max))))
+    (when json-string (message (bib-get-doi-in-json json-string)))))
 
 (defun bib-fetch-abstract-from-crossref (doi)
   "Return the abstract of the work with DOI."
