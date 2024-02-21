@@ -44,6 +44,11 @@
   "Rudimentary support for bibliographic information retrieval."
   :group 'bibtex)
 
+(defcustom bib-downloads-dir (expand-file-name "~/Downloads/")
+  "Directory where downloaded files are stored."
+  :type 'directory
+  :group 'bib)
+
 ;;;; Variables
 
 (defcustom bib-isbndb-key ""
@@ -249,7 +254,7 @@ If TITLE is itself an English title, return it unchanged."
   (let ((app "libby"))
     (unless (executable-find app)
       (user-error "Please install %s (https://github.com/carterprince/libby)" app))
-    (term (format "%s '%s' --no-view --output-dir %s --lang spa" app query ps/dir-downloads))))
+    (term (format "%s '%s' --no-view --output-dir %s --lang spa" app query bib-downloads-dir))))
 
 (provide 'bib)
 
