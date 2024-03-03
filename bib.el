@@ -49,7 +49,46 @@
   :type 'directory
   :group 'bib)
 
-;;;; Variables
+(defcustom bib-imdb-use-mullvad-p nil
+  "If non-nil, connect to this city temporarily to fetch film data from IMDb.
+The Internet Movie Database fetches data in the language of the country where
+the user is located. If you want to fetch data in a different language, set this
+user option to a city where this language is spoken.
+
+This option requires the `mullvad' package, and the user options
+`mullvad-websites-and-cities' and `mullvad-cities-and-servers' to be set
+accordingly. Specifically, `mullvad-websites-and-cities' must include a cons
+cell whose car is `\"IMDb\"' and whose cdr is the city you want `mullvad' to
+connect to (e.g. `(\"IMDb\" . \"New York\")'), and `mullvad-cities-and-servers'
+must include a cons cell whose car is this city and whose cdr is a Mullvad
+server for this city (e.g. `(\"New York\" . \"us-nyc-wg-601\")'). Here is a
+sample configuration:
+
+\(setq mullvad-cities-and-servers
+      '((\"London\" . \"gb-lon-wg-001\")
+        (\"Madrid\" . \"es-mad-wg-101\")
+        (\"Malmö\" . \"se-sto-wg-001\")
+        (\"Frankfurt\" . \"de-fra-wg-001\")
+        (\"New York\" . \"us-nyc-wg-601\")
+        (\"San José\" . \"us-sjc-wg-001\")
+        (\"São Paulo\" . \"br-sao-wg-001\")))
+
+\(setq mullvad-websites-and-cities
+      '((\"Betfair\" . \"London\")
+        (\"Criterion Channel\" . \"New York\")
+        (\"Gemini\" . \"New York\")
+        (\"HathiTrust\" . \"San José\")
+        (\"IMDb\" . \"New York\")
+        (\"Library Genesis\" . \"Malmö\")
+        (\"Pirate Bay\" . \"Malmö\")
+        (\"UC Berkeley\" . \"San José\")
+        (\"Wise\" . \"Madrid\")))
+
+Refer to the `mullvad' package documentation for details."
+  :type 'boolean
+  :group 'bib)
+
+;;;;; API keys
 
 (defcustom bib-isbndb-key ""
   "Private key for the `ISBNdb' database."
@@ -196,11 +235,14 @@ The query may include the title, author, or ISBN of the book."
 
 ;;;; imdb
 
+(declare-function mullvad-connect-to-website "mullvad")
 (defun bib-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
-This command uses the OMDb API, which requires an API key.  You can
-get a free key at http://www.omdbapi.com/."
+For this command to work, you must set `bib-omdb-key' to a valid OMDb API key.
+You can get a free key at <http://www.omdbapi.com/>."
   (interactive)
+  (when bib-imdb-use-mullvad-p
+    (mullvad-connect-to-website "IMDb" 1 'silently))
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
 	 (url (format
 	       "http://www.omdbapi.com/?s=%s&apikey=%s"
