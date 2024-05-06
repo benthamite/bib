@@ -280,6 +280,7 @@ If TITLE is itself an English title, return it unchanged."
 	     (english-title (cdr (assoc 'title first-result)))) ; Extract the title
 	english-title))))
 
+(declare-function zotra-extras-add-entry "zotra-extras")
 (defun bib-zotra-add-entry-from-title ()
   "Add bibliography entry from its title."
   (interactive)
@@ -289,7 +290,7 @@ If TITLE is itself an English title, return it unchanged."
 	       ("doi" (bib-search-crossref))
 	       ("isbn" (bib-search-isbn))
 	       ("imdb" (bib-search-imdb)))))
-    (zotra-add-entry id)))
+    (zotra-extras-add-entry id)))
 
 (defun bib-libgen (query)
   "Search for QUERY in Library Genesis."
