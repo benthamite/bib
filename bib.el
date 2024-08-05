@@ -245,8 +245,8 @@ You can get a free key at <http://www.omdbapi.com/>."
     (mullvad-connect-to-website "IMDb" 1 'silently))
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
 	 (url (format
-	       "http://www.omdbapi.com/?s=%s&apikey=%s"
-	       (url-hexify-string title) bib-omdb-key)))
+	       "https://www.omdbapi.com/?s=%s&apikey=%s"
+	       (replace-regexp-in-string " " "+" title) bib-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
       (goto-char (point-min))
       (search-forward "\n\n")
