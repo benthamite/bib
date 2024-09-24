@@ -66,23 +66,23 @@ sample configuration:
 
 \(setq mullvad-cities-and-servers
       '((\"London\" . \"gb-lon-wg-001\")
-        (\"Madrid\" . \"es-mad-wg-101\")
-        (\"Malmö\" . \"se-sto-wg-001\")
-        (\"Frankfurt\" . \"de-fra-wg-001\")
-        (\"New York\" . \"us-nyc-wg-601\")
-        (\"San José\" . \"us-sjc-wg-001\")
-        (\"São Paulo\" . \"br-sao-wg-001\")))
+	(\"Madrid\" . \"es-mad-wg-101\")
+	(\"Malmö\" . \"se-sto-wg-001\")
+	(\"Frankfurt\" . \"de-fra-wg-001\")
+	(\"New York\" . \"us-nyc-wg-601\")
+	(\"San José\" . \"us-sjc-wg-001\")
+	(\"São Paulo\" . \"br-sao-wg-001\")))
 
 \(setq mullvad-websites-and-cities
       '((\"Betfair\" . \"London\")
-        (\"Criterion Channel\" . \"New York\")
-        (\"Gemini\" . \"New York\")
-        (\"HathiTrust\" . \"San José\")
-        (\"IMDb\" . \"New York\")
-        (\"Library Genesis\" . \"Malmö\")
-        (\"Pirate Bay\" . \"Malmö\")
-        (\"UC Berkeley\" . \"San José\")
-        (\"Wise\" . \"Madrid\")))
+	 (\"Criterion Channel\" . \"New York\")
+	 (\"Gemini\" . \"New York\")
+	 (\"HathiTrust\" . \"San José\")
+	 (\"IMDb\" . \"New York\")
+	 (\"Library Genesis\" . \"Malmö\")
+	 (\"Pirate Bay\" . \"Malmö\")
+	 (\"UC Berkeley\" . \"San José\")
+	 (\"Wise\" . \"Madrid\")))
 
 Refer to the `mullvad' package documentation for details."
   :type 'boolean
