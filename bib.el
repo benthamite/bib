@@ -272,8 +272,10 @@ return the full Letterboxd URL."
          (url  (format "https://letterboxd.com/search/autocomplete/?q=%s&type=film"
                        (url-hexify-string title))))
     (with-current-buffer (url-retrieve-synchronously url)
-      (goto-char (point-min))
-      (search-forward "\n\n")
+      (goto-char url-http-end-of-headers)
+      ;; Skip anti-XSSI prefix like ")]}'" if present
+      (when (looking-at-p ")]}'")
+        (forward-line 1))
       (let* ((json-object-type 'plist)
              (json-array-type  'list)
              (json             (json-read))
