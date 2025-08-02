@@ -266,7 +266,7 @@ If TITLE is itself an English title, return it unchanged."
 	       ("doi" (bib-search-crossref))
 	       ("isbn" (bib-search-isbn))
 	       ("imdb" (bib-search-imdb))
-	       ("letterboxd" (bib-search-letterboxd)))))
+	       ("letterboxd" (bib-search-letterboxd nil t)))))
     (zotra-extras-add-entry id)))
 
 ;;;;; Letterboxd
