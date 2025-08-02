@@ -1,0 +1,87 @@
+#+TITLE: bib
+#+AUTHOR: Pablo Stafforini
+
+* About
+
+=bib= provides a handful of conveniences for quickly retrieving
+bibliographic metadata for books, academic papers and films from within
+Emacs.  Given only a title (and optionally an author), the package
+searches the relevant public APIs, picks the correct unique identifier
+(ISBN, DOI, IMDb / Letterboxd slug) and returns a ready-to-paste BibTeX
+entry or URL.
+
+This is *not* a full-featured reference manager—just a small personal
+tool that I decided to publish because others might find it useful.
+Adjust your expectations accordingly.
+
+* Installation
+
+** Manual
+
+Clone this repository somewhere on your ~load-path~ and add the
+following to your =~/.emacs.d/init.el= (or equivalent):
+
+#+begin_src emacs-lisp
+(require 'bib)
+#+end_src
+
+** With =use-package=
+
+#+begin_src emacs-lisp
+;; with vc
+(use-package bib
+  :vc (:url "https://github.com/benthamite/bib"))
+
+;; with elpaca
+(use-package bib
+  :ensure (:host github :repo "benthamite/bib"))
+
+;; with straight
+(use-package bib
+  :straight (:host github :repo "benthamite/bib"))
+
+;; with quelpa
+(use-package bib
+  :quelpa (bib :fetcher github :repo "benthamite/bib"))
+#+end_src
+
+* Usage
+
+The following interactive commands can be invoked via =M-x= or bound to
+keys of your choice:
+
+| Command                          | Description                                         |
+|----------------------------------+-----------------------------------------------------|
+| =bib-search-crossref=            | Query Crossref for a DOI                            |
+| =bib-search-isbn=                | Query ISBNdb for an ISBN                            |
+| =bib-search-imdb=                | Query OMDb for an IMDb ID                           |
+| =bib-search-letterboxd=          | Query Letterboxd for the film slug / URL           |
+| =bib-zotra-add-entry-from-title= | Create a BibTeX entry via *zotra* once an ID exists |
+| =bib-libgen=                     | Search Library Genesis and download a file          |
+
+* API keys
+
+Set these variables (e.g. in your init file or via customize) if you
+have the corresponding service keys:
+
+- =bib-isbndb-key= :: ISBNdb key
+- =bib-omdb-key=   :: OMDb key
+- =bib-tmdb-key=   :: TMDb key (only for title translation)
+
+The commands that depend on an unset key will gracefully fail.
+
+* Configuration
+
+#+begin_src emacs-lisp
+;; store downloaded PDFs here
+(setq bib-downloads-dir "~/Downloads/")
+
+;; prefer Letterboxd slugs instead of full URLs
+(setq bib-letterboxd-use-slug-p t)
+#+end_src
+
+See each command’s docstring for further options.
+
+* License
+
+GPL-3.0 — see COPYING.txt included in this repository.
