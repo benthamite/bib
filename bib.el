@@ -55,6 +55,12 @@
   :type 'boolean
   :group 'bib)
 
+(defcustom letterboxd-user-agent
+  "Mozilla/5.0 (compatible; Emacs bib.el)"
+  "User-Agent string sent when querying Letterboxd."
+  :type 'string
+  :group 'bib)
+
 ;;;;; API keys
 
 (defcustom bib-isbndb-key ""
