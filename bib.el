@@ -68,6 +68,12 @@ This key is only used to translate the title of a film into English."
 
 (make-obsolete-variable 'bib-imdb-use-mullvad-p nil "2024-09-26")
 
+(defcustom bib-letterboxd-use-slug-p nil
+  "When non-nil, `bib-search-letterboxd' returns the Letterboxd slug instead
+of the full URL."
+  :type 'boolean
+  :group 'bib)
+
 ;;;; Functions
 
 (defun bib-reverse-first-last-name (author)
@@ -244,13 +250,50 @@ If TITLE is itself an English title, return it unchanged."
   "Add bibliography entry from its title."
   (interactive)
   (require 'zotra)
-  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb") nil t))
+  (let* ((type (completing-read "Type of search:" '("doi" "isbn" "imdb" "letterboxd") nil t))
 	 (id (pcase type
 	       ("doi" (bib-search-crossref))
 	       ("isbn" (bib-search-isbn))
-	       ("imdb" (bib-search-imdb)))))
+	       ("imdb" (bib-search-imdb))
+	       ("letterboxd" (bib-search-letterboxd)))))
     (zotra-extras-add-entry id)))
 
+;;;
+;;; Letterboxd
+;;;
+(defun bib-search-letterboxd (&optional title)
+  "Prompt user for TITLE and return a Letterboxd slug or full URL.
+
+If `bib-letterboxd-use-slug-p' is non-nil, return only the slug; otherwise
+return the full Letterboxd URL."
+  (interactive)
+  (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
+         (url  (format "https://letterboxd.com/search/autocomplete/?q=%s&type=film"
+                       (url-hexify-string title))))
+    (with-current-buffer (url-retrieve-synchronously url)
+      (goto-char (point-min))
+      (search-forward "\n\n")
+      (let* ((json-object-type 'plist)
+             (json-array-type  'list)
+             (json             (json-read))
+             (items            (plist-get json :items)))
+        (kill-buffer)
+        (if items
+            (let* ((candidates
+                    (mapcar (lambda (item)
+                              (let* ((name (plist-get item :name))
+                                     (year (plist-get item :year))
+                                     (slug (plist-get item :slug)))
+                                (cons (format "%s (%s)" name year) slug)))
+                            items))
+                   (selected (assoc (completing-read "Select a film: "
+                                                     candidates) candidates))
+                   (slug (cdr selected)))
+              (if bib-letterboxd-use-slug-p
+                  slug
+                (format "https://letterboxd.com/film/%s/" slug)))
+          (user-error "No matching films found"))))))
+;;;;
 (defun bib-libgen (query)
   "Search for QUERY in Library Genesis."
   (interactive "sQuery: ")
