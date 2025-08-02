@@ -75,32 +75,6 @@ This key is only used to translate the title of a film into English."
 
 ;;;; Functions
 
-(defun bib-reverse-first-last-name (author)
-  "Reverse the order of comma-separated elements in AUTHOR field."
-  (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
-
-(defun bib-get-doi-in-json (json-string)
-  "Return DOI for selected candidate in JSON-STRING."
-  (when-let* ((json-object-type 'alist)
-	      (json-array-type 'list)
-	      (json-key-type 'symbol)
-	      (data (json-read-from-string json-string))
-	      (items (alist-get 'items (alist-get 'message data)))
-	      (candidates (mapcar (lambda (item)
-				    (let ((author-names (mapconcat
-							 (lambda (author)
-							   (concat (alist-get 'family author)
-								   ", " (alist-get 'given author)))
-							 (alist-get 'author item)
-							 " & "))
-					  (title (car (alist-get 'title item)))
-					  (doi (alist-get 'DOI item)))
-				      (cons (concat title " by " (bib-reverse-first-last-name author-names)) doi)))
-				  items))
-	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
-	      (selected-doi (cdr (assoc selected-string candidates))))
-    selected-doi))
-
 ;;;;; Crossref
 
 (defun bib-search-crossref (&optional title author)
@@ -142,6 +116,32 @@ This key is only used to translate the title of a film into English."
 	  (kill-buffer)
           (when-let ((abstract (plist-get message-plist :abstract)))
 	    abstract))))))
+
+(defun bib-get-doi-in-json (json-string)
+  "Return DOI for selected candidate in JSON-STRING."
+  (when-let* ((json-object-type 'alist)
+	      (json-array-type 'list)
+	      (json-key-type 'symbol)
+	      (data (json-read-from-string json-string))
+	      (items (alist-get 'items (alist-get 'message data)))
+	      (candidates (mapcar (lambda (item)
+				    (let ((author-names (mapconcat
+							 (lambda (author)
+							   (concat (alist-get 'family author)
+								   ", " (alist-get 'given author)))
+							 (alist-get 'author item)
+							 " & "))
+					  (title (car (alist-get 'title item)))
+					  (doi (alist-get 'DOI item)))
+				      (cons (concat title " by " (bib-reverse-first-last-name author-names)) doi)))
+				  items))
+	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
+	      (selected-doi (cdr (assoc selected-string candidates))))
+    selected-doi))
+
+(defun bib-reverse-first-last-name (author)
+  "Reverse the order of comma-separated elements in AUTHOR field."
+  (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
 
 ;;;;; ISBN
 
