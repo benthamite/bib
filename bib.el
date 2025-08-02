@@ -348,7 +348,9 @@ Letterboxd autocomplete endpoints and returns nil when both fail."
       (bib-lbx--items-from-json json))))
 
 (defun bib-lbx--ddg-items (query)
-  "Return (DISPLAY . SLUG) list via DuckDuckGo site: search."
+  "Return (DISPLAY . SLUG) list via DuckDuckGo site: search.
+QUERY is the user-supplied search string.  The function tries two
+Letterboxd autocomplete endpoints and returns nil when both fail."
   (let* ((enc  (url-hexify-string
                 (concat "site:letterboxd.com/film " query)))
          (html (bib-lbx--http-get
