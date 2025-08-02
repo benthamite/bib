@@ -194,7 +194,6 @@ The query may include the title, author, or ISBN of the book."
       (kill-buffer url))
     description))
 
-
 ;;;; imdb
 
 (declare-function mullvad-connect-to-website "mullvad")
