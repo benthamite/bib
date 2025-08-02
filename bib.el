@@ -309,7 +309,6 @@ If ACCEPT is given, send it as the Accept header."
 
 (defun bib-lbx--parse-json (text)
   "Return an alist parsed from JSON TEXT, or nil on parse error.
-
 TEXT is the JSON string to decode.  The function catches
 `json-parse-error' and returns nil when decoding fails."
   (when text
@@ -319,7 +318,6 @@ TEXT is the JSON string to decode.  The function catches
 
 (defun bib-lbx--items-from-json (alist)
   "Return a list of (DISPLAY . SLUG) pairs parsed from Letterboxd ALIST.
-
 ALIST is the decoded JSON object returned by `bib-lbx--parse-json'."
   (mapcar
    (lambda (it)
@@ -333,7 +331,6 @@ ALIST is the decoded JSON object returned by `bib-lbx--parse-json'."
 
 (defun bib-lbx--json-items (query)
   "Return a list of (DISPLAY . SLUG) pairs for QUERY via Letterboxd JSON.
-
 QUERY is the user-supplied search string.  The function tries two
 Letterboxd autocomplete endpoints and returns nil when both fail."
   (let* ((enc (url-hexify-string query))
@@ -375,7 +372,6 @@ Letterboxd autocomplete endpoints and returns nil when both fail."
 
 (defun bib-lbx--fetch-items (query)
   "Return (DISPLAY . SLUG) list for QUERY using Letterboxd or DuckDuckGo.
-
 QUERY is the search string.  The JSON endpoint is tried first, falling
 back to DuckDuckGo when it returns nil.  The function signals an error
 when no results can be obtained."
