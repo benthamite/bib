@@ -69,8 +69,7 @@ This key is only used to translate the title of a film into English."
 (make-obsolete-variable 'bib-imdb-use-mullvad-p nil "2024-09-26")
 
 (defcustom bib-letterboxd-use-slug-p nil
-  "When non-nil, `bib-search-letterboxd' returns the Letterboxd slug instead
-of the full URL."
+  "Whether to return the Letterboxd slug instead of the full URL."
   :type 'boolean
   :group 'bib)
 
@@ -101,6 +100,8 @@ of the full URL."
 	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
+
+;;;;; Crossref
 
 (defun bib-search-crossref (&optional title author)
   "Query the Crossref database for TITLE and AUTHOR."
@@ -142,7 +143,7 @@ of the full URL."
           (when-let ((abstract (plist-get message-plist :abstract)))
 	    abstract))))))
 
-;;;; ISBN
+;;;;; ISBN
 
 (defun bib-search-isbn (&optional query)
   "Query the ISBNdb database for QUERY.
@@ -200,7 +201,7 @@ The query may include the title, author, or ISBN of the book."
       (kill-buffer url))
     description))
 
-;;;; imdb
+;;;;; IMDb
 
 (declare-function mullvad-connect-to-website "mullvad")
 (defun bib-search-imdb (&optional title)
@@ -258,12 +259,10 @@ If TITLE is itself an English title, return it unchanged."
 	       ("letterboxd" (bib-search-letterboxd)))))
     (zotra-extras-add-entry id)))
 
-;;;
-;;; Letterboxd
-;;;
+;;;;; Letterboxd
+
 (defun bib-search-letterboxd (&optional title)
   "Prompt user for TITLE and return a Letterboxd slug or full URL.
-
 If `bib-letterboxd-use-slug-p' is non-nil, return only the slug; otherwise
 return the full Letterboxd URL."
   (interactive)
@@ -293,6 +292,7 @@ return the full Letterboxd URL."
                   slug
                 (format "https://letterboxd.com/film/%s/" slug)))
           (user-error "No matching films found"))))))
+
 ;;;;
 (defun bib-libgen (query)
   "Search for QUERY in Library Genesis."
