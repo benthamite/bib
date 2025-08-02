@@ -266,13 +266,13 @@ If TITLE is itself an English title, return it unchanged."
 ;;;;; Letterboxd
 
 ;;;###autoload
-(defun bib-search-letterboxd (query &optional full-url)
+(defun bib-search-letterboxd (&optional query full-url)
   "Prompt for QUERY, let you choose a film, and insert its slug.
 With prefix argument FULL-URL non‑nil, insert the full URL instead."
-  (interactive
-   (list (read-string "Search Letterboxd for film: ")
-         current-prefix-arg))
-  (let* ((items  (bib-lbx--fetch-items query))
+  (interactive)
+  (let* ((query (or query (read-string "Search Letterboxd for film: ")))
+	 (full-url (or full-url current-prefix-arg))
+	 (items  (bib-lbx--fetch-items query))
          (choice (completing-read "Choose film: " (mapcar #'car items) nil t))
          (slug   (cdr (assoc choice items)))
          (text   (if full-url
