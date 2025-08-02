@@ -39,6 +39,11 @@
 (require 'json)
 (require 'seq)
 
+;;;; Variables
+
+(defconst bib-letterboxd-url "https://letterboxd.com/film/%s/"
+  "URL template for Letterboxd film pages.")
+
 ;;;; User options
 
 (defgroup bib ()
@@ -282,7 +287,7 @@ With prefix argument FULL-URL non‑nil, insert the full URL instead."
          (choice (completing-read "Choose film: " (mapcar #'car items) nil t))
          (slug   (cdr (assoc choice items)))
          (text   (if full-url
-                     (format "https://letterboxd.com/film/%s/" slug)
+                     (format bib-letterboxd-url slug)
                    slug)))
     (when (called-interactively-p 'interactive)
       (kill-new text)
