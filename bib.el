@@ -214,8 +214,10 @@ You can get a free key at <http://www.omdbapi.com/>."
 	       "https://www.omdbapi.com/?s=%s&apikey=%s"
 	       (replace-regexp-in-string " " "+" title) bib-omdb-key)))
     (with-current-buffer (url-retrieve-synchronously url)
-      (goto-char (point-min))
-      (search-forward "\n\n")
+      (goto-char url-http-end-of-headers)
+      ;; Skip anti-XSSI prefix like \")]}'\" if present
+      (when (looking-at-p ")]}'")
+        (forward-line 1))
       (let* ((json-object-type 'plist)
 	     (json (json-read))
 	     (movies (plist-get json :Search)))
