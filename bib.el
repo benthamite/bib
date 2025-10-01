@@ -152,6 +152,7 @@ This key is only used to translate the title of a film into English."
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
+;;;###autoload
 (defun bib-reverse-first-last-name (author)
   "Reverse the order of comma-separated elements in AUTHOR field."
   (replace-regexp-in-string "\\(.*\\), \\(.*\\)" "\\2 \\1" author))
