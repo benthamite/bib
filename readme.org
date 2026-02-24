@@ -7,6 +7,8 @@
 
 This is not a full-featured reference manager---just a personal tool that I decided to publish because others might find it useful.
 
+The development repository is on [[https://github.com/benthamite/bib][GitHub]].
+
 * Requirements
 
 - Emacs 28.1 or later (for =json-parse-string= and =when-let*= with bindings).
@@ -118,3 +120,20 @@ Example:
 * License
 
 GPL-3.0 --- see =COPYING.txt= included in this repository.
+
+* Indices
+:PROPERTIES:
+:CUSTOM_ID: h:indices
+:END:
+
+** Function index
+:PROPERTIES:
+:INDEX: fn
+:CUSTOM_ID: h:function-index
+:END:
+
+** Variable index
+:PROPERTIES:
+:INDEX: vr
+:CUSTOM_ID: h:variable-index
+:END:

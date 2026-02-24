@@ -1,0 +1,281 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename readme.info
+@settitle bib
+@documentencoding UTF-8
+@documentlanguage en
+@c %**end of header
+
+@dircategory Misc
+@direntry
+* (readme).             bib.
+@end direntry
+
+@finalout
+@titlepage
+@title bib
+@author Pablo Stafforini
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top bib
+@end ifnottex
+
+@menu
+* About::
+* Requirements::
+* Installation::
+* Usage::
+* Configuration::
+* Troubleshooting::
+* License::
+* Indices::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Installation
+
+* Manual::
+* With @samp{use-package}::
+
+Usage
+
+* Interactive commands::
+* Non-interactive functions::
+
+Configuration
+
+* API keys::
+* General options::
+
+Indices
+
+* Function index::
+* Variable index::
+
+@end detailmenu
+@end menu
+
+@node About
+@chapter About
+
+@samp{bib} is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, ISBNdb, OMDb, TMDb, Letterboxd, Library Genesis---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full Bib@TeX{} entry (via @uref{https://github.com/mpedramfar/zotra, zotra}).
+
+This is not a full-featured reference manager---just a personal tool that I decided to publish because others might find it useful.
+
+The development repository is on @uref{https://github.com/benthamite/bib, GitHub}.
+
+@node Requirements
+@chapter Requirements
+
+@itemize
+@item
+Emacs 28.1 or later (for @samp{json-parse-string} and @samp{when-let*} with bindings).
+@item
+The built-in @samp{url}, @samp{json}, @samp{dom}, and @samp{seq} libraries (all shipped with Emacs).
+@item
+@uref{https://github.com/mpedramfar/zotra, zotra} (optional)---only needed for @samp{bib-zotra-add-entry-from-title}.
+@item
+@uref{https://github.com/carterprince/libby, libby} (optional)---the external CLI tool needed by @samp{bib-libgen}.
+@end itemize
+
+@node Installation
+@chapter Installation
+
+@menu
+* Manual::
+* With @samp{use-package}::
+@end menu
+
+@node Manual
+@section Manual
+
+Clone this repository somewhere on your @samp{load-path} and add the following to your init file:
+
+@lisp
+(require 'bib)
+@end lisp
+
+@node With @samp{use-package}
+@section With @samp{use-package}
+
+@lisp
+;; with vc (Emacs 30+)
+(use-package bib
+  :vc (:url "https://github.com/benthamite/bib"))
+
+;; with elpaca
+(use-package bib
+  :ensure (:host github :repo "benthamite/bib"))
+
+;; with straight
+(use-package bib
+  :straight (:host github :repo "benthamite/bib"))
+
+;; with quelpa
+(use-package bib
+  :quelpa (bib :fetcher github :repo "benthamite/bib"))
+@end lisp
+
+@node Usage
+@chapter Usage
+
+All interactive commands can be invoked via @samp{M-x} or bound to keys of your choice.
+
+@menu
+* Interactive commands::
+* Non-interactive functions::
+@end menu
+
+@node Interactive commands
+@section Interactive commands
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Command
+@tab Description
+@item @samp{bib-search-crossref}
+@tab Search Crossref by title/author, select a result, and get its DOI
+@item @samp{bib-search-isbn}
+@tab Search ISBNdb by title/author/ISBN and get the ISBN
+@item @samp{bib-search-imdb}
+@tab Search OMDb by movie title and get the full IMDb URL
+@item @samp{bib-search-letterboxd}
+@tab Search Letterboxd by film title and get the slug or full URL
+@item @samp{bib-zotra-add-entry-from-title}
+@tab Create a Bib@TeX{} entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd
+@item @samp{bib-libgen}
+@tab Search Library Genesis via the @samp{libby} CLI and download the result
+@end multitable
+
+@node Non-interactive functions
+@section Non-interactive functions
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Function
+@tab Description
+@item @samp{bib-fetch-abstract-from-crossref}
+@tab Return the abstract for a given DOI via Crossref
+@item @samp{bib-fetch-abstract-from-google-books}
+@tab Return the description for a given ISBN via Google Books
+@item @samp{bib-translate-title-into-english}
+@tab Translate a foreign-language film title to English via TMDb
+@item @samp{bib-reverse-first-last-name}
+@tab Reverse "Last, First" to "First Last" (handles "&"-separated)
+@end multitable
+
+@node Configuration
+@chapter Configuration
+
+@menu
+* API keys::
+* General options::
+@end menu
+
+@node API keys
+@section API keys
+
+Several commands require API keys for the services they query.  Set these variables in your init file or via @samp{M-x customize-group RET bib RET}:
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Variable
+@tab Service
+@tab Required by
+@tab How to get a key
+@item @samp{bib-isbndb-key}
+@tab ISBNdb
+@tab @samp{bib-search-isbn}
+@tab @uref{https://isbndb.com/isbn-database, isbndb.com}
+@item @samp{bib-omdb-key}
+@tab OMDb
+@tab @samp{bib-search-imdb}
+@tab @uref{https://www.omdbapi.com/, omdbapi.com}
+@item @samp{bib-tmdb-key}
+@tab TMDb
+@tab @samp{bib-translate-title-into-english}
+@tab @uref{https://www.themoviedb.org/settings/api, themoviedb.org}
+@end multitable
+
+If a key is empty or nil when the corresponding command is invoked, a descriptive error message is shown.
+
+Example:
+
+@lisp
+(setopt bib-isbndb-key "your-isbndb-key-here")
+(setopt bib-omdb-key   "your-omdb-key-here")
+(setopt bib-tmdb-key   "your-tmdb-key-here")
+@end lisp
+
+@node General options
+@section General options
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaa} {aaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Variable
+@tab Type
+@tab Default
+@tab Description
+@item @samp{bib-downloads-dir}
+@tab directory
+@tab @samp{~/Downloads/}
+@tab Directory where @samp{bib-libgen} saves downloaded files
+@item @samp{bib-letterboxd-use-slug-p}
+@tab boolean
+@tab @samp{nil}
+@tab When non-nil, @samp{bib-search-letterboxd} returns the slug by default; when nil, the full URL@.  A prefix argument inverts the behavior for a single invocation.
+@item @samp{bib-letterboxd-user-agent}
+@tab string
+@tab @samp{"Mozilla/5.0 ..."}
+@tab User-Agent header sent when querying Letterboxd
+@end multitable
+
+Example:
+
+@lisp
+;; store downloaded PDFs somewhere else
+(setopt bib-downloads-dir "~/Documents/papers/")
+
+;; prefer Letterboxd slugs instead of full URLs
+(setopt bib-letterboxd-use-slug-p t)
+@end lisp
+
+@node Troubleshooting
+@chapter Troubleshooting
+
+@itemize
+@item
+@strong{"Please set @samp{bib-...-key} before using this command"}: you need to set the relevant API key variable.  See the @ref{API keys} section above.
+@item
+@strong{"No results found"}: the upstream API returned no matches for your query.  Try a different or more specific search term.
+@item
+@strong{"Please install libby"}: @samp{bib-libgen} requires the external @uref{https://github.com/carterprince/libby, libby} CLI tool.  Install it and make sure it is on your @samp{PATH}.
+@item
+@strong{Letterboxd searches return nothing}: the package tries the Letterboxd JSON autocomplete endpoint first, then falls back to DuckDuckGo HTML scraping.  Both approaches can fail if the services change their response format.  File an issue if this happens.
+@end itemize
+
+@node License
+@chapter License
+
+GPL-3.0 --- see @samp{COPYING.txt} included in this repository.
+
+@node Indices
+@chapter Indices
+
+@menu
+* Function index::
+* Variable index::
+@end menu
+
+@node Function index
+@section Function index
+
+@printindex fn
+
+@node Variable index
+@section Variable index
+
+@printindex vr
+
+@bye
