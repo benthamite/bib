@@ -1,17 +1,24 @@
-#+TITLE: bib
-#+AUTHOR: Pablo Stafforini
+#+title: bib
+#+author: Pablo Stafforini
 
 * About
 
-=bib= provides a handful of conveniences for quickly retrieving bibliographic metadata for books, academic papers and films from within Emacs. Given only a title (and optionally an author), the package searches the relevant public APIs, picks the correct unique identifier (ISBN, DOI, IMDb / Letterboxd slug) and returns a ready-to-paste BibTeX entry or URL.
+=bib= is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, ISBNdb, OMDb, TMDb, Letterboxd, Library Genesis---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full BibTeX entry (via [[https://github.com/mpedramfar/zotra][zotra]]).
 
-This is *not* a full-featured reference manager—just a small personal tool that I decided to publish because others might find it useful. Adjust your expectations accordingly.
+This is not a full-featured reference manager---just a personal tool that I decided to publish because others might find it useful.
+
+* Requirements
+
+- Emacs 28.1 or later (for =json-parse-string= and =when-let*= with bindings).
+- The built-in =url=, =json=, =dom=, and =seq= libraries (all shipped with Emacs).
+- [[https://github.com/mpedramfar/zotra][zotra]] (optional)---only needed for =bib-zotra-add-entry-from-title=.
+- [[https://github.com/carterprince/libby][libby]] (optional)---the external CLI tool needed by =bib-libgen=.
 
 * Installation
 
 ** Manual
 
-Clone this repository somewhere on your ~load-path~ and add the following to your =~/.emacs.d/init.el= (or equivalent):
+Clone this repository somewhere on your =load-path= and add the following to your init file:
 
 #+begin_src emacs-lisp
 (require 'bib)
@@ -20,7 +27,7 @@ Clone this repository somewhere on your ~load-path~ and add the following to you
 ** With =use-package=
 
 #+begin_src emacs-lisp
-;; with vc
+;; with vc (Emacs 30+)
 (use-package bib
   :vc (:url "https://github.com/benthamite/bib"))
 
@@ -39,39 +46,75 @@ Clone this repository somewhere on your ~load-path~ and add the following to you
 
 * Usage
 
-The following interactive commands can be invoked via =M-x= or bound to keys of your choice:
+All interactive commands can be invoked via =M-x= or bound to keys of your choice.
 
-| Command                        | Description                                       |
-|--------------------------------+---------------------------------------------------|
-| =bib-search-crossref=            | Query Crossref for a DOI                          |
-| =bib-search-isbn=                | Query ISBNdb for an ISBN                          |
-| =bib-search-imdb=                | Query OMDb for an IMDb ID                         |
-| =bib-search-letterboxd=          | Query Letterboxd for the film slug / URL          |
-| =bib-zotra-add-entry-from-title= | Create a BibTeX entry via *zotra* once an ID exists |
-| =bib-libgen=                     | Search Library Genesis and download a file        |
+** Interactive commands
 
-* API keys
+| Command                          | Description                                                             |
+|----------------------------------+-------------------------------------------------------------------------|
+| =bib-search-crossref=             | Search Crossref by title/author, select a result, and get its DOI       |
+| =bib-search-isbn=                 | Search ISBNdb by title/author/ISBN and get the ISBN                     |
+| =bib-search-imdb=                 | Search OMDb by movie title and get the full IMDb URL                    |
+| =bib-search-letterboxd=           | Search Letterboxd by film title and get the slug or full URL            |
+| =bib-zotra-add-entry-from-title=  | Create a BibTeX entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd      |
+| =bib-libgen=                      | Search Library Genesis via the =libby= CLI and download the result       |
 
-Set these variables (e.g. in your init file or via customize) if you have the corresponding service keys:
+** Non-interactive functions
 
-- =bib-isbndb-key= :: ISBNdb key
-- =bib-omdb-key=   :: OMDb key
-- =bib-tmdb-key=   :: TMDb key (only for title translation)
-
-The commands that depend on an unset key will gracefully fail.
+| Function                                | Description                                                  |
+|-----------------------------------------+--------------------------------------------------------------|
+| =bib-fetch-abstract-from-crossref=        | Return the abstract for a given DOI via Crossref              |
+| =bib-fetch-abstract-from-google-books=    | Return the description for a given ISBN via Google Books      |
+| =bib-translate-title-into-english=        | Translate a foreign-language film title to English via TMDb   |
+| =bib-reverse-first-last-name=             | Reverse "Last, First" to "First Last" (handles "&"-separated)|
 
 * Configuration
 
+** API keys
+
+Several commands require API keys for the services they query.  Set these variables in your init file or via =M-x customize-group RET bib RET=:
+
+| Variable          | Service | Required by                          | How to get a key                        |
+|-------------------+---------+--------------------------------------+-----------------------------------------|
+| =bib-isbndb-key=    | ISBNdb  | =bib-search-isbn=                     | [[https://isbndb.com/isbn-database][isbndb.com]]    |
+| =bib-omdb-key=      | OMDb    | =bib-search-imdb=                     | [[https://www.omdbapi.com/][omdbapi.com]]   |
+| =bib-tmdb-key=      | TMDb    | =bib-translate-title-into-english=    | [[https://www.themoviedb.org/settings/api][themoviedb.org]]|
+
+If a key is empty or nil when the corresponding command is invoked, a descriptive error message is shown.
+
+Example:
+
 #+begin_src emacs-lisp
-;; store downloaded PDFs here
-(setopt bib-downloads-dir "~/Downloads/")
+(setopt bib-isbndb-key "your-isbndb-key-here")
+(setopt bib-omdb-key   "your-omdb-key-here")
+(setopt bib-tmdb-key   "your-tmdb-key-here")
+#+end_src
+
+** General options
+
+| Variable                      | Type      | Default              | Description                                                      |
+|-------------------------------+-----------+----------------------+------------------------------------------------------------------|
+| =bib-downloads-dir=            | directory | =~/Downloads/=        | Directory where =bib-libgen= saves downloaded files                |
+| =bib-letterboxd-use-slug-p=    | boolean   | =nil=                 | When non-nil, =bib-search-letterboxd= returns the slug by default; when nil, the full URL.  A prefix argument inverts the behavior for a single invocation. |
+| =bib-letterboxd-user-agent=    | string    | ="Mozilla/5.0 ..."=   | User-Agent header sent when querying Letterboxd                  |
+
+Example:
+
+#+begin_src emacs-lisp
+;; store downloaded PDFs somewhere else
+(setopt bib-downloads-dir "~/Documents/papers/")
 
 ;; prefer Letterboxd slugs instead of full URLs
 (setopt bib-letterboxd-use-slug-p t)
 #+end_src
 
-See each command’s docstring for further options.
+* Troubleshooting
+
+- *"Please set =bib-...-key= before using this command"*: you need to set the relevant API key variable.  See the [[*API keys][API keys]] section above.
+- *"No results found"*: the upstream API returned no matches for your query.  Try a different or more specific search term.
+- *"Please install libby"*: =bib-libgen= requires the external [[https://github.com/carterprince/libby][libby]] CLI tool.  Install it and make sure it is on your =PATH=.
+- *Letterboxd searches return nothing*: the package tries the Letterboxd JSON autocomplete endpoint first, then falls back to DuckDuckGo HTML scraping.  Both approaches can fail if the services change their response format.  File an issue if this happens.
 
 * License
 
-GPL-3.0 — see COPYING.txt included in this repository.
+GPL-3.0 --- see =COPYING.txt= included in this repository.
