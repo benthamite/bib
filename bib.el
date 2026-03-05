@@ -1,5 +1,7 @@
 ;;; bib.el --- Rudimentary support for bibliographic information retrieval. -*- lexical-binding: t -*-
 
+;; Copyright (C) 2026 Pablo Stafforini
+
 ;; Author: Pablo Stafforini
 ;; Maintainer: Pablo Stafforini
 ;; Version: 0.1.0
