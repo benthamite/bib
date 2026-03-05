@@ -109,8 +109,10 @@ Return the DOI of the selected candidate."
 				 (not (string-empty-p author)))
 			(format "&query.author=%s"
 				(url-hexify-string author)))))
-	 (url-buffer (url-retrieve-synchronously url))
+	 (url-buffer (url-retrieve-synchronously url nil nil 15))
 	 (json-string nil))
+    (unless url-buffer
+      (error "Network request to Crossref failed"))
     (unwind-protect
 	(setq json-string (with-current-buffer url-buffer
 			    (goto-char (point-min))
@@ -125,10 +127,12 @@ Return the DOI of the selected candidate."
 
 (defun bib-fetch-abstract-from-crossref (doi)
   "Return the abstract of the work with DOI."
-  (let* ((url (format "https://api.crossref.org/works/%s" doi))
+  (let* ((url (format "https://api.crossref.org/works/%s" (url-hexify-string doi)))
 	 (buf (progn
 		(message "Trying to find abstract for %s with `crossref'..." doi)
-		(url-retrieve-synchronously url))))
+		(url-retrieve-synchronously url nil nil 15))))
+    (unless buf
+      (error "Network request to Crossref failed for DOI %s" doi))
     (unwind-protect
 	(with-current-buffer buf
 	  (goto-char (point-min))
@@ -153,17 +157,22 @@ Return the DOI of the selected candidate."
 	      (data (json-read-from-string json-string))
 	      (items (alist-get 'items (alist-get 'message data)))
 	      (candidates (mapcar (lambda (item)
-				    (let ((author-names (mapconcat
-							 (lambda (author)
-							   (concat (alist-get 'family author)
-								   ", " (alist-get 'given author)))
-							 (alist-get 'author item)
-							 " & "))
-					  (title (car (alist-get 'title item)))
-					  (doi (alist-get 'DOI item)))
-				      (cons (concat title " by " (bib-reverse-first-last-name author-names)) doi)))
+				    (let* ((authors (alist-get 'author item))
+					   (author-names (when authors
+							   (mapconcat
+							    (lambda (author)
+							      (concat (alist-get 'family author)
+								      ", " (alist-get 'given author)))
+							    authors
+							    " & ")))
+					   (title (or (car (alist-get 'title item)) "[untitled]"))
+					   (doi (alist-get 'DOI item))
+					   (display (if (and author-names (not (string-empty-p author-names)))
+							(concat title " by " (bib-reverse-first-last-name author-names))
+						      title)))
+				      (cons display doi)))
 				  items))
-	      (selected-string (completing-read "Select a bibliographic entry: " candidates))
+	      (selected-string (completing-read "Select a bibliographic entry: " candidates nil t))
 	      (selected-doi (cdr (assoc selected-string candidates))))
     selected-doi))
 
@@ -191,12 +200,14 @@ The query may include the title, author, or ISBN of the book."
 	 (url-request-extra-headers
 	  `(("Accept" . "application/json")
 	    ("Authorization" . ,bib-isbndb-key)))
-	 (url-buffer (url-retrieve-synchronously url))
+	 (url-buffer (url-retrieve-synchronously url nil nil 15))
 	 (json-object-type 'plist)
 	 (json-key-type 'keyword)
 	 (json-array-type 'list)
 	 json-data
 	 result-list)
+    (unless url-buffer
+      (error "Network request to ISBNdb failed"))
     (unwind-protect
 	(with-current-buffer url-buffer
 	  (goto-char (point-min))
@@ -209,12 +220,12 @@ The query may include the title, author, or ISBN of the book."
       (user-error "No results found"))
     (let* ((candidates (mapcar (lambda (book)
 				 (let* ((title (plist-get book :title))
-					(authors (plist-get book :authors))
+					(author (car-safe (plist-get book :authors)))
 					(isbn (plist-get book :isbn)))
-				   (cons (if authors
+				   (cons (if (and author (stringp author))
 					     (format "%s by %s"
 						     title
-						     (bib-reverse-first-last-name (car authors)))
+						     (bib-reverse-first-last-name author))
 					   title)
 					 isbn)))
 			       result-list))
@@ -223,10 +234,13 @@ The query may include the title, author, or ISBN of the book."
 
 (defun bib-fetch-abstract-from-google-books (isbn)
   "Return the abstract of the book with ISBN."
-  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s" isbn))
+  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s"
+		     (url-hexify-string isbn)))
 	(description nil))
     (message "Trying to find abstract for %s with `Google Books'..." isbn)
-    (let ((buf (url-retrieve-synchronously url)))
+    (let ((buf (url-retrieve-synchronously url nil nil 15)))
+      (unless buf
+	(error "Network request to Google Books failed for ISBN %s" isbn))
       (unwind-protect
 	  (with-current-buffer buf
 	    (goto-char (point-min))
@@ -256,7 +270,9 @@ You can get a free key at <http://www.omdbapi.com/>."
 	 (url (format
 	       "https://www.omdbapi.com/?s=%s&apikey=%s"
 	       (url-hexify-string title) bib-omdb-key))
-	 (buf (url-retrieve-synchronously url)))
+	 (buf (url-retrieve-synchronously url nil nil 15)))
+    (unless buf
+      (error "Network request to OMDb failed"))
     (unwind-protect
 	(with-current-buffer buf
 	  (goto-char url-http-end-of-headers)
@@ -287,7 +303,9 @@ Requires `bib-tmdb-key' to be set."
   (let* ((search-url (format
 		      "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
 		      bib-tmdb-key (url-hexify-string title)))
-	 (buf (url-retrieve-synchronously search-url)))
+	 (buf (url-retrieve-synchronously search-url nil nil 15)))
+    (unless buf
+      (error "Network request to TMDb failed"))
     (unwind-protect
 	(with-current-buffer buf
 	  (goto-char url-http-end-of-headers)
@@ -380,7 +398,7 @@ ALIST is the decoded JSON object returned by `bib-lbx--parse-json'."
    (lambda (it)
      (let* ((title (alist-get 'name it))
             (year  (alist-get 'year it))
-            (url   (alist-get 'url it))          ; "/film/<slug>/"
+            (url   (or (alist-get 'url it) ""))   ; "/film/<slug>/"
             (slug  (replace-regexp-in-string "\\`/film/\\|/\\'" "" url))
             (disp  (if year (format "%s (%s)" title year) title)))
        (cons disp slug)))
