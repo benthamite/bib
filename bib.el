@@ -31,12 +31,9 @@
 
 ;;; Code:
 
-(require 'dom)
 (require 'url)
 (require 'url-util)
-(require 'url-http)
 (require 'json)
-(require 'seq)
 
 ;;;; Variables
 
@@ -95,6 +92,39 @@ This key is only used to translate the title of a film into English."
   (when (or (null key) (string-empty-p key))
     (user-error "Please set `bib-%s-key' before using this command" service)))
 
+(defun bib--http-get (url &optional extra-headers)
+  "Fetch URL synchronously and return the response body as a string.
+EXTRA-HEADERS is an alist of additional HTTP headers.
+Returns nil if the request fails."
+  (let ((url-request-method "GET")
+        (url-request-extra-headers extra-headers))
+    (pcase (url-retrieve-synchronously url t nil 15)
+      ('nil nil)
+      (buf (unwind-protect
+               (with-current-buffer buf
+                 (goto-char (point-min))
+                 (re-search-forward "\r?\n\r?\n" nil 'move)
+                 (buffer-substring-no-properties (point) (point-max)))
+             (when (buffer-live-p buf)
+               (kill-buffer buf)))))))
+
+(defun bib--parse-json (text)
+  "Parse JSON TEXT into an alist with symbol keys, or nil on error."
+  (when (and text (not (string-empty-p text)))
+    (condition-case nil
+        (let ((json-object-type 'alist)
+              (json-array-type 'list)
+              (json-key-type 'symbol))
+          (json-read-from-string text))
+      (json-error nil))))
+
+(defun bib--completing-read (prompt candidates)
+  "Let the user choose from CANDIDATES using PROMPT.
+CANDIDATES is an alist of (DISPLAY . VALUE).  Returns the VALUE
+of the selected entry."
+  (let ((selection (completing-read prompt candidates nil t)))
+    (cdr (assoc selection candidates))))
+
 ;;;;; Crossref
 
 (defun bib-search-crossref (&optional title author)
@@ -102,79 +132,50 @@ This key is only used to translate the title of a film into English."
 Return the DOI of the selected candidate."
   (let* ((title (or title (read-from-minibuffer "Enter title: ")))
 	 (author (or author (read-from-minibuffer "Enter author (optional): ")))
-	 (url-request-method "GET")
 	 (url (concat (format "https://api.crossref.org/works?query.bibliographic=%s"
 			      (url-hexify-string title))
-		      (when (and author
-				 (not (string-empty-p author)))
-			(format "&query.author=%s"
-				(url-hexify-string author)))))
-	 (url-buffer (url-retrieve-synchronously url nil nil 15))
-	 (json-string nil))
-    (unless url-buffer
-      (error "Network request to Crossref failed"))
-    (unwind-protect
-	(setq json-string (with-current-buffer url-buffer
-			    (goto-char (point-min))
-			    (re-search-forward "^$")
-			    (buffer-substring-no-properties (point) (point-max))))
-      (when (buffer-live-p url-buffer)
-	(kill-buffer url-buffer)))
-    (when json-string
-      (let ((doi (bib-get-doi-in-json json-string)))
+		      (when (and author (not (string-empty-p author)))
+			(format "&query.author=%s" (url-hexify-string author)))))
+	 (body (or (bib--http-get url)
+		   (error "Network request to Crossref failed")))
+	 (data (bib--parse-json body)))
+    (when data
+      (let ((doi (bib--crossref-select-doi data)))
 	(when doi (message "%s" doi))
 	doi))))
 
 (defun bib-fetch-abstract-from-crossref (doi)
   "Return the abstract of the work with DOI."
+  (message "Trying to find abstract for %s with `crossref'..." doi)
   (let* ((url (format "https://api.crossref.org/works/%s" (url-hexify-string doi)))
-	 (buf (progn
-		(message "Trying to find abstract for %s with `crossref'..." doi)
-		(url-retrieve-synchronously url nil nil 15))))
-    (unless buf
-      (error "Network request to Crossref failed for DOI %s" doi))
-    (unwind-protect
-	(with-current-buffer buf
-	  (goto-char (point-min))
-	  (if (search-forward-regexp "HTTP/.* 404" nil t)
-	      nil
-	    (re-search-forward "^$")
-	    (let* ((json-object-type 'plist)
-		   (json-array-type 'list)
-		   (json (json-read-from-string
-			  (buffer-substring-no-properties (point) (point-max))))
-		   (message-plist (plist-get json :message)))
-	      (when-let ((abstract (plist-get message-plist :abstract)))
-		abstract))))
-      (when (buffer-live-p buf)
-	(kill-buffer buf)))))
+	 (data (bib--parse-json (bib--http-get url)))
+	 (msg (and data (alist-get 'message data))))
+    (when (consp msg)
+      (alist-get 'abstract msg))))
 
-(defun bib-get-doi-in-json (json-string)
-  "Return DOI for selected candidate in JSON-STRING."
-  (when-let* ((json-object-type 'alist)
-	      (json-array-type 'list)
-	      (json-key-type 'symbol)
-	      (data (json-read-from-string json-string))
-	      (items (alist-get 'items (alist-get 'message data)))
+(defun bib--crossref-select-doi (data)
+  "Let the user select a DOI from Crossref response DATA."
+  (when-let* ((items (alist-get 'items (alist-get 'message data)))
 	      (candidates (mapcar (lambda (item)
 				    (let* ((authors (alist-get 'author item))
-					   (author-names (when authors
-							   (mapconcat
-							    (lambda (author)
-							      (concat (alist-get 'family author)
-								      ", " (alist-get 'given author)))
-							    authors
-							    " & ")))
-					   (title (or (car (alist-get 'title item)) "[untitled]"))
+					   (author-names
+					    (when authors
+					      (mapconcat
+					       (lambda (a)
+						 (concat (alist-get 'family a)
+							 ", " (alist-get 'given a)))
+					       authors " & ")))
+					   (title (or (car (alist-get 'title item))
+						      "[untitled]"))
 					   (doi (alist-get 'DOI item))
-					   (display (if (and author-names (not (string-empty-p author-names)))
-							(concat title " by " (bib-reverse-first-last-name author-names))
+					   (display (if (and author-names
+							     (not (string-empty-p author-names)))
+							(concat title " by "
+								(bib-reverse-first-last-name author-names))
 						      title)))
 				      (cons display doi)))
-				  items))
-	      (selected-string (completing-read "Select a bibliographic entry: " candidates nil t))
-	      (selected-doi (cdr (assoc selected-string candidates))))
-    selected-doi))
+				  items)))
+    (bib--completing-read "Select a bibliographic entry: " candidates)))
 
 ;;;###autoload
 (defun bib-reverse-first-last-name (author)
@@ -195,71 +196,39 @@ The query may include the title, author, or ISBN of the book."
   (interactive)
   (bib--ensure-key bib-isbndb-key "isbndb")
   (let* ((query (or query (read-string "Enter query (title and/or author): ")))
-	 (url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20" (url-hexify-string query)))
-	 (url-request-method "GET")
-	 (url-request-extra-headers
-	  `(("Accept" . "application/json")
-	    ("Authorization" . ,bib-isbndb-key)))
-	 (url-buffer (url-retrieve-synchronously url nil nil 15))
-	 (json-object-type 'plist)
-	 (json-key-type 'keyword)
-	 (json-array-type 'list)
-	 json-data
-	 result-list)
-    (unless url-buffer
-      (error "Network request to ISBNdb failed"))
-    (unwind-protect
-	(with-current-buffer url-buffer
-	  (goto-char (point-min))
-	  (search-forward "\n\n") ;; Skip response headers
-	  (setq json-data (json-read)))
-      (when (buffer-live-p url-buffer)
-	(kill-buffer url-buffer)))
-    (setq result-list (plist-get json-data :books))
-    (unless result-list
+	 (url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20"
+		      (url-hexify-string query)))
+	 (body (or (bib--http-get url `(("Accept" . "application/json")
+					("Authorization" . ,bib-isbndb-key)))
+		   (error "Network request to ISBNdb failed")))
+	 (data (bib--parse-json body))
+	 (books (alist-get 'books data)))
+    (unless books
       (user-error "No results found"))
-    (let* ((candidates (mapcar (lambda (book)
-				 (let* ((title (plist-get book :title))
-					(author (car-safe (plist-get book :authors)))
-					(isbn (plist-get book :isbn)))
-				   (cons (if (and author (stringp author))
-					     (format "%s by %s"
-						     title
-						     (bib-reverse-first-last-name author))
-					   title)
-					 isbn)))
-			       result-list))
-	   (selection (completing-read "Select a book: " candidates)))
-      (cdr (assoc selection candidates)))))
+    (let ((candidates (mapcar (lambda (book)
+				(let* ((title (alist-get 'title book))
+				       (author (car-safe (alist-get 'authors book)))
+				       (isbn (alist-get 'isbn book)))
+				  (cons (if (and author (stringp author))
+					    (format "%s by %s" title
+						    (bib-reverse-first-last-name author))
+					  title)
+					isbn)))
+			      books)))
+      (bib--completing-read "Select a book: " candidates))))
 
 (defun bib-fetch-abstract-from-google-books (isbn)
   "Return the abstract of the book with ISBN."
-  (let ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s"
-		     (url-hexify-string isbn)))
-	(description nil))
-    (message "Trying to find abstract for %s with `Google Books'..." isbn)
-    (let ((buf (url-retrieve-synchronously url nil nil 15)))
-      (unless buf
-	(error "Network request to Google Books failed for ISBN %s" isbn))
-      (unwind-protect
-	  (with-current-buffer buf
-	    (goto-char (point-min))
-	    (re-search-forward "^$")
-	    (let* ((json-object-type 'plist)
-		   (json-array-type 'list)
-		   (json (json-read-from-string
-			  (buffer-substring-no-properties (point) (point-max))))
-		   (items (plist-get json :items))
-		   (volume-info (and items (plist-get (car items) :volumeInfo))))
-	      (setq description (and volume-info (plist-get volume-info :description)))))
-	(when (buffer-live-p buf)
-	  (kill-buffer buf))))
-    description))
+  (message "Trying to find abstract for %s with `Google Books'..." isbn)
+  (let* ((url (format "https://www.googleapis.com/books/v1/volumes?q=isbn:%s"
+		      (url-hexify-string isbn)))
+	 (data (bib--parse-json (bib--http-get url)))
+	 (items (and data (alist-get 'items data)))
+	 (volume-info (and items (alist-get 'volumeInfo (car items)))))
+    (and volume-info (alist-get 'description volume-info))))
 
 ;;;;; IMDb
 
-(defvar url-http-end-of-headers)
-(declare-function mullvad-connect-to-website "mullvad")
 (defun bib-search-imdb (&optional title)
   "Prompt user for TITLE, then add film to bibfile via its IMDb ID.
 For this command to work, you must set `bib-omdb-key' to a valid OMDb API key.
@@ -267,56 +236,37 @@ You can get a free key at <http://www.omdbapi.com/>."
   (interactive)
   (bib--ensure-key bib-omdb-key "omdb")
   (let* ((title (or title (read-from-minibuffer "Enter movie title: ")))
-	 (url (format
-	       "https://www.omdbapi.com/?s=%s&apikey=%s"
-	       (url-hexify-string title) bib-omdb-key))
-	 (buf (url-retrieve-synchronously url nil nil 15)))
-    (unless buf
-      (error "Network request to OMDb failed"))
-    (unwind-protect
-	(with-current-buffer buf
-	  (goto-char url-http-end-of-headers)
-	  ;; Skip anti-XSSI prefix like \")]}'\" if present
-	  (when (looking-at-p ")]}'")
-	    (forward-line 1))
-	  (let* ((json-object-type 'plist)
-		 (json (json-read))
-		 (movies (plist-get json :Search)))
-	    (if movies
-		(let* ((candidates (mapcar (lambda (movie)
-					     (cons (format "%s (%s)"
-							   (plist-get movie :Title)
-							   (plist-get movie :Year))
-						   (plist-get movie :imdbID)))
-					   movies))
-		       (movie (assoc (completing-read "Select a movie: " candidates) candidates)))
-		  (concat "https://www.imdb.com/title/" (cdr movie)))
-	      (user-error "No matching movies found"))))
-      (when (buffer-live-p buf)
-	(kill-buffer buf)))))
+	 (url (format "https://www.omdbapi.com/?s=%s&apikey=%s"
+		      (url-hexify-string title) bib-omdb-key))
+	 (body (or (bib--http-get url)
+		   (error "Network request to OMDb failed")))
+	 (data (bib--parse-json body))
+	 (movies (and data (alist-get 'Search data))))
+    (if movies
+	(let ((candidates (mapcar (lambda (movie)
+				    (cons (format "%s (%s)"
+						  (alist-get 'Title movie)
+						  (alist-get 'Year movie))
+					  (alist-get 'imdbID movie)))
+				  movies)))
+	  (concat "https://www.imdb.com/title/"
+		  (bib--completing-read "Select a movie: " candidates)))
+      (user-error "No matching movies found"))))
 
 (defun bib-translate-title-into-english (title)
   "Return English title of TITLE.
 If TITLE is itself an English title, return it unchanged.
 Requires `bib-tmdb-key' to be set."
   (bib--ensure-key bib-tmdb-key "tmdb")
-  (let* ((search-url (format
-		      "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
+  (let* ((url (format "https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s"
 		      bib-tmdb-key (url-hexify-string title)))
-	 (buf (url-retrieve-synchronously search-url nil nil 15)))
-    (unless buf
-      (error "Network request to TMDb failed"))
-    (unwind-protect
-	(with-current-buffer buf
-	  (goto-char url-http-end-of-headers)
-	  (let* ((response (json-read))
-		 (results (cdr (assoc 'results response))))
-	    (if (and results (> (length results) 0))
-		(let ((first-result (elt results 0)))
-		  (cdr (assoc 'title first-result)))
-	      (user-error "No results found for \"%s\"" title))))
-      (when (buffer-live-p buf)
-	(kill-buffer buf)))))
+	 (body (or (bib--http-get url)
+		   (error "Network request to TMDb failed")))
+	 (data (bib--parse-json body))
+	 (results (and data (alist-get 'results data))))
+    (if (and results (> (length results) 0))
+	(alist-get 'title (car results))
+      (user-error "No results found for \"%s\"" title))))
 
 (declare-function zotra-extras-add-entry "zotra-extras")
 (defun bib-zotra-add-entry-from-title ()
@@ -346,19 +296,13 @@ When FULL-URL is non-nil in a Lisp call, always return the full URL
 regardless of `bib-letterboxd-use-slug-p'."
   (interactive)
   (let* ((query (or query (read-string "Search Letterboxd for film: ")))
-	 (return-slug (if full-url
-			  nil
-			(if (called-interactively-p 'any)
-			    (if current-prefix-arg
-				(not bib-letterboxd-use-slug-p)
-			      bib-letterboxd-use-slug-p)
-			  bib-letterboxd-use-slug-p)))
+	 (return-slug (and (not full-url)
+			   (if (and (called-interactively-p 'any) current-prefix-arg)
+			       (not bib-letterboxd-use-slug-p)
+			     bib-letterboxd-use-slug-p)))
 	 (items  (bib-lbx--fetch-items query))
-         (choice (completing-read "Choose film: " (mapcar #'car items) nil t))
-         (slug   (cdr (assoc choice items)))
-         (text   (if return-slug
-                     slug
-                   (format bib-letterboxd-url slug))))
+         (slug   (bib--completing-read "Choose film: " items))
+         (text   (if return-slug slug (format bib-letterboxd-url slug))))
     (when (called-interactively-p 'interactive)
       (kill-new text)
       (message "%s" text))
@@ -367,38 +311,20 @@ regardless of `bib-letterboxd-use-slug-p'."
 (defun bib-lbx--http-get (url &optional accept)
   "Return body of URL as string or nil on network error.
 If ACCEPT is given, send it as the Accept header."
-  (let ((url-request-extra-headers
-         `(("User-Agent"       . ,bib-letterboxd-user-agent)
-           ("X-Requested-With" . "XMLHttpRequest")
-           ("Referer"          . "https://letterboxd.com/")
-           ,@(when accept `(("Accept" . ,accept))))))
-    (pcase (url-retrieve-synchronously url t t 10)
-      (`nil nil)
-      (buf  (with-current-buffer buf
-              (unwind-protect
-                  (progn
-                    (goto-char (point-min))
-                    (re-search-forward "\r?\n\r?\n" nil 'move)
-                    (buffer-substring-no-properties (point) (point-max)))
-                (kill-buffer buf)))))))
-
-(defun bib-lbx--parse-json (text)
-  "Return an alist parsed from JSON TEXT, or nil on parse error.
-TEXT is the JSON string to decode.  The function catches
-`json-parse-error' and returns nil when decoding fails."
-  (when text
-    (condition-case nil
-        (json-parse-string text :object-type 'alist :array-type 'list)
-      (json-parse-error nil))))
+  (bib--http-get url
+		 `(("User-Agent"       . ,bib-letterboxd-user-agent)
+		   ("X-Requested-With" . "XMLHttpRequest")
+		   ("Referer"          . "https://letterboxd.com/")
+		   ,@(when accept `(("Accept" . ,accept))))))
 
 (defun bib-lbx--items-from-json (alist)
   "Return a list of (DISPLAY . SLUG) pairs parsed from Letterboxd ALIST.
-ALIST is the decoded JSON object returned by `bib-lbx--parse-json'."
+ALIST is the decoded JSON object returned by `bib--parse-json'."
   (mapcar
    (lambda (it)
      (let* ((title (alist-get 'name it))
             (year  (alist-get 'year it))
-            (url   (or (alist-get 'url it) ""))   ; "/film/<slug>/"
+            (url   (or (alist-get 'url it) ""))
             (slug  (replace-regexp-in-string "\\`/film/\\|/\\'" "" url))
             (disp  (if year (format "%s (%s)" title year) title)))
        (cons disp slug)))
@@ -410,11 +336,11 @@ QUERY is the user-supplied search string.  The function tries two
 Letterboxd autocomplete endpoints and returns nil when both fail."
   (let* ((enc (url-hexify-string query))
          (json
-          (or (bib-lbx--parse-json
+          (or (bib--parse-json
 	       (bib-lbx--http-get
                 (format "https://letterboxd.com/s/autocompletefilm/?input=%s"
                         enc) "application/json"))
-	      (bib-lbx--parse-json
+	      (bib--parse-json
 	       (bib-lbx--http-get
                 (format
                  "https://letterboxd.com/search/autocomplete/?q=%s&type=film"
