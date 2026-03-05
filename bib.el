@@ -49,11 +49,6 @@
   "Rudimentary support for bibliographic information retrieval."
   :group 'bibtex)
 
-(defcustom bib-downloads-dir (expand-file-name "~/Downloads/")
-  "Directory where downloaded files are stored."
-  :type 'directory
-  :group 'bib)
-
 (defcustom bib-letterboxd-use-slug-p nil
   "Whether to return the Letterboxd slug instead of the full URL.
 When non-nil, `bib-search-letterboxd' returns the slug by default;
@@ -446,20 +441,6 @@ when no results can be obtained."
           (unless items
             (error "Letterboxd: no results for \"%s\"" query))
           items))))
-
-;;;;; Library Genesis
-
-(defun bib-libgen (query)
-  "Search for QUERY in Library Genesis."
-  (interactive "sQuery: ")
-  (let ((app "libby"))
-    (unless (executable-find app)
-      (user-error "Please install %s (https://github.com/carterprince/libby)" app))
-    (let ((buf (make-term "libby" app nil
-			  query "--no-view"
-			  "--output-dir" (expand-file-name bib-downloads-dir)
-			  "--lang" "spa")))
-      (switch-to-buffer buf))))
 
 (provide 'bib)
 

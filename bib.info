@@ -1,0 +1,290 @@
+This is bib.info, produced by makeinfo version 7.2 from bib.texi.
+
+INFO-DIR-SECTION Emacs misc features
+START-INFO-DIR-ENTRY
+* Bib: (bib).           Retrieve bibliographic metadata.
+END-INFO-DIR-ENTRY
+
+
+File: bib.info,  Node: Top,  Next: About,  Up: (dir)
+
+bib
+***
+
+* Menu:
+
+* About::
+* Requirements::
+* Installation::
+* Usage::
+* Configuration::
+* Troubleshooting::
+* License::
+* Indices::
+
+-- The Detailed Node Listing --
+
+Installation
+
+* Manual::
+* With use-package::
+
+Usage
+
+* Interactive commands::
+* Non-interactive functions::
+
+Configuration
+
+* API keys::
+* General options::
+
+Indices
+
+* Function index::
+* Variable index::
+
+
+File: bib.info,  Node: About,  Next: Requirements,  Prev: Top,  Up: Top
+
+1 About
+*******
+
+‘bib’ is a small Emacs package for quickly retrieving bibliographic
+metadata for books, academic papers, and films.  Given only a title (and
+optionally an author), it searches the relevant public APIs--Crossref,
+ISBNdb, OMDb, TMDb, Letterboxd--locates the correct unique identifier
+(DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use
+result: a DOI string, an IMDb URL, a Letterboxd slug, or a full BibTeX
+entry (via zotra (https://github.com/mpedramfar/zotra)).
+
+   This is not a full-featured reference manager--just a personal tool
+that I decided to publish because others might find it useful.
+
+   The development repository is on GitHub
+(https://github.com/benthamite/bib).
+
+
+File: bib.info,  Node: Requirements,  Next: Installation,  Prev: About,  Up: Top
+
+2 Requirements
+**************
+
+   • Emacs 28.1 or later (for ‘json-parse-string’ and ‘when-let*’ with
+     bindings).
+   • The built-in ‘url’, ‘json’, ‘dom’, and ‘seq’ libraries (all shipped
+     with Emacs).
+   • zotra (https://github.com/mpedramfar/zotra) (optional)--only needed
+     for ‘bib-zotra-add-entry-from-title’.
+
+
+File: bib.info,  Node: Installation,  Next: Usage,  Prev: Requirements,  Up: Top
+
+3 Installation
+**************
+
+* Menu:
+
+* Manual::
+* With use-package::
+
+
+File: bib.info,  Node: Manual,  Next: With use-package,  Up: Installation
+
+3.1 Manual
+==========
+
+Clone this repository somewhere on your ‘load-path’ and add the
+following to your init file:
+
+     (require 'bib)
+
+
+File: bib.info,  Node: With use-package,  Prev: Manual,  Up: Installation
+
+3.2 With ‘use-package’
+======================
+
+     ;; with vc (Emacs 30+)
+     (use-package bib
+       :vc (:url "https://github.com/benthamite/bib"))
+
+     ;; with elpaca
+     (use-package bib
+       :ensure (:host github :repo "benthamite/bib"))
+
+     ;; with straight
+     (use-package bib
+       :straight (:host github :repo "benthamite/bib"))
+
+     ;; with quelpa
+     (use-package bib
+       :quelpa (bib :fetcher github :repo "benthamite/bib"))
+
+
+File: bib.info,  Node: Usage,  Next: Configuration,  Prev: Installation,  Up: Top
+
+4 Usage
+*******
+
+All interactive commands can be invoked via ‘M-x’ or bound to keys of
+your choice.
+
+* Menu:
+
+* Interactive commands::
+* Non-interactive functions::
+
+
+File: bib.info,  Node: Interactive commands,  Next: Non-interactive functions,  Up: Usage
+
+4.1 Interactive commands
+========================
+
+Command                            Description
+--------------------------------------------------------------------------------------------------------
+‘bib-search-crossref’              Search Crossref by title/author, select a result, and get its DOI
+‘bib-search-isbn’                  Search ISBNdb by title/author/ISBN and get the ISBN
+‘bib-search-imdb’                  Search OMDb by movie title and get the full IMDb URL
+‘bib-search-letterboxd’            Search Letterboxd by film title and get the slug or full URL
+‘bib-zotra-add-entry-from-title’   Create a BibTeX entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd
+
+
+File: bib.info,  Node: Non-interactive functions,  Prev: Interactive commands,  Up: Usage
+
+4.2 Non-interactive functions
+=============================
+
+Function                                 Description
+---------------------------------------------------------------------------------------------------------
+‘bib-fetch-abstract-from-crossref’       Return the abstract for a given DOI via Crossref
+‘bib-fetch-abstract-from-google-books’   Return the description for a given ISBN via Google Books
+‘bib-translate-title-into-english’       Translate a foreign-language film title to English via TMDb
+‘bib-reverse-first-last-name’            Reverse "Last, First" to "First Last" (handles "&"-separated)
+
+
+File: bib.info,  Node: Configuration,  Next: Troubleshooting,  Prev: Usage,  Up: Top
+
+5 Configuration
+***************
+
+* Menu:
+
+* API keys::
+* General options::
+
+
+File: bib.info,  Node: API keys,  Next: General options,  Up: Configuration
+
+5.1 API keys
+============
+
+Several commands require API keys for the services they query.  Set
+these variables in your init file or via ‘M-x customize-group RET bib
+RET’:
+
+Variable           Service   Required by                          How to get a key
+--------------------------------------------------------------------------------------------------------------------------------
+‘bib-isbndb-key’   ISBNdb    ‘bib-search-isbn’                    isbndb.com (https://isbndb.com/isbn-database)
+‘bib-omdb-key’     OMDb      ‘bib-search-imdb’                    omdbapi.com (https://www.omdbapi.com/)
+‘bib-tmdb-key’     TMDb      ‘bib-translate-title-into-english’   themoviedb.org (https://www.themoviedb.org/settings/api)
+
+   If a key is empty or nil when the corresponding command is invoked, a
+descriptive error message is shown.
+
+   Example:
+
+     (setopt bib-isbndb-key "your-isbndb-key-here")
+     (setopt bib-omdb-key   "your-omdb-key-here")
+     (setopt bib-tmdb-key   "your-tmdb-key-here")
+
+
+File: bib.info,  Node: General options,  Prev: API keys,  Up: Configuration
+
+5.2 General options
+===================
+
+Variable                      Type      Default               Description
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+‘bib-letterboxd-use-slug-p’   boolean   ‘nil’                 When non-nil, ‘bib-search-letterboxd’ returns the slug by default; when nil, the full URL.  A prefix argument inverts the behavior for a single invocation.
+‘bib-letterboxd-user-agent’   string    ‘"Mozilla/5.0 ..."’   User-Agent header sent when querying Letterboxd
+
+   Example:
+
+     ;; prefer Letterboxd slugs instead of full URLs
+     (setopt bib-letterboxd-use-slug-p t)
+
+
+File: bib.info,  Node: Troubleshooting,  Next: License,  Prev: Configuration,  Up: Top
+
+6 Troubleshooting
+*****************
+
+   • *"Please set ‘bib-...-key’ before using this command"*: you need to
+     set the relevant API key variable.  See the *note API keys::
+     section above.
+   • *"No results found"*: the upstream API returned no matches for your
+     query.  Try a different or more specific search term.
+   • *Letterboxd searches return nothing*: the package tries the
+     Letterboxd JSON autocomplete endpoint first, then falls back to
+     DuckDuckGo HTML scraping.  Both approaches can fail if the services
+     change their response format.  File an issue if this happens.
+
+
+File: bib.info,  Node: License,  Next: Indices,  Prev: Troubleshooting,  Up: Top
+
+7 License
+*********
+
+GPL-3.0 -- see ‘COPYING.txt’ included in this repository.
+
+
+File: bib.info,  Node: Indices,  Prev: License,  Up: Top
+
+8 Indices
+*********
+
+* Menu:
+
+* Function index::
+* Variable index::
+
+
+File: bib.info,  Node: Function index,  Next: Variable index,  Up: Indices
+
+8.1 Function index
+==================
+
+
+File: bib.info,  Node: Variable index,  Prev: Function index,  Up: Indices
+
+8.2 Variable index
+==================
+
+
+Tag Table:
+Node: Top202
+Node: About633
+Node: Requirements1425
+Node: Installation1869
+Node: Manual2026
+Node: With use-package2245
+Node: Usage2781
+Node: Interactive commands3036
+Node: Non-interactive functions3827
+Node: Configuration4549
+Node: API keys4713
+Node: General options5821
+Node: Troubleshooting6694
+Node: License7397
+Node: Indices7565
+Node: Function index7694
+Node: Variable index7811
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+Info-documentlanguage: en
+End:
