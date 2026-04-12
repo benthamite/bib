@@ -53,10 +53,10 @@ File: bib.info,  Node: About,  Next: Requirements,  Prev: Top,  Up: Top
 ‘bib’ is a small Emacs package for quickly retrieving bibliographic
 metadata for books, academic papers, and films.  Given only a title (and
 optionally an author), it searches the relevant public APIs--Crossref,
-ISBNdb, OMDb, TMDb, Letterboxd--locates the correct unique identifier
-(DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use
-result: a DOI string, an IMDb URL, a Letterboxd slug, or a full BibTeX
-entry (via zotra (https://github.com/mpedramfar/zotra)).
+Open Library, OMDb, TMDb, Letterboxd--locates the correct unique
+identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a
+ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a
+full BibTeX entry (via zotra (https://github.com/mpedramfar/zotra)).
 
    This is not a full-featured reference manager--just a personal tool
 that I decided to publish because others might find it useful.
@@ -142,9 +142,9 @@ File: bib.info,  Node: Interactive commands,  Next: Non-interactive functions,  
 ========================
 
 Command                            Description
---------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------
 ‘bib-search-crossref’              Search Crossref by title/author, select a result, and get its DOI
-‘bib-search-isbn’                  Search ISBNdb by title/author/ISBN and get the ISBN
+‘bib-search-isbn’                  Search Open Library by title/author/ISBN and get the ISBN (subtitle shown for matching)
 ‘bib-search-imdb’                  Search OMDb by movie title and get the full IMDb URL
 ‘bib-search-letterboxd’            Search Letterboxd by film title and get the slug or full URL
 ‘bib-zotra-add-entry-from-title’   Create a BibTeX entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd
@@ -183,18 +183,20 @@ Several commands require API keys for the services they query.  Set
 these variables in your init file or via ‘M-x customize-group RET bib
 RET’:
 
-Variable           Service   Required by                          How to get a key
---------------------------------------------------------------------------------------------------------------------------------
-‘bib-isbndb-key’   ISBNdb    ‘bib-search-isbn’                    isbndb.com (https://isbndb.com/isbn-database)
-‘bib-omdb-key’     OMDb      ‘bib-search-imdb’                    omdbapi.com (https://www.omdbapi.com/)
-‘bib-tmdb-key’     TMDb      ‘bib-translate-title-into-english’   themoviedb.org (https://www.themoviedb.org/settings/api)
+   Note: ‘bib-search-isbn’ now uses Open Library
+(https://openlibrary.org) (free, no key required).  The ‘bib-isbndb-key’
+variable is obsolete.
+
+Variable         Service   Required by                          How to get a key
+------------------------------------------------------------------------------------------------------------------------------
+‘bib-omdb-key’   OMDb      ‘bib-search-imdb’                    omdbapi.com (https://www.omdbapi.com/)
+‘bib-tmdb-key’   TMDb      ‘bib-translate-title-into-english’   themoviedb.org (https://www.themoviedb.org/settings/api)
 
    If a key is empty or nil when the corresponding command is invoked, a
 descriptive error message is shown.
 
    Example:
 
-     (setopt bib-isbndb-key "your-isbndb-key-here")
      (setopt bib-omdb-key   "your-omdb-key-here")
      (setopt bib-tmdb-key   "your-tmdb-key-here")
 
@@ -265,21 +267,21 @@ File: bib.info,  Node: Variable index,  Prev: Function index,  Up: Indices
 Tag Table:
 Node: Top202
 Node: About633
-Node: Requirements1425
-Node: Installation1869
-Node: Manual2026
-Node: With use-package2245
-Node: Usage2781
-Node: Interactive commands3036
-Node: Non-interactive functions3827
-Node: Configuration4549
-Node: API keys4713
-Node: General options5821
-Node: Troubleshooting6694
-Node: License7397
-Node: Indices7565
-Node: Function index7694
-Node: Variable index7811
+Node: Requirements1431
+Node: Installation1875
+Node: Manual2032
+Node: With use-package2251
+Node: Usage2787
+Node: Interactive commands3042
+Node: Non-interactive functions3890
+Node: Configuration4612
+Node: API keys4776
+Node: General options5857
+Node: Troubleshooting6730
+Node: License7433
+Node: Indices7601
+Node: Function index7730
+Node: Variable index7847
 
 End Tag Table
 

@@ -36,6 +36,7 @@
 (require 'url)
 (require 'url-util)
 (require 'json)
+(require 'seq)
 
 ;;;; Variables
 
@@ -71,6 +72,8 @@ behavior for a single invocation."
   "Private key for the `ISBNdb' database."
   :type 'string
   :group 'bib)
+
+(make-obsolete-variable 'bib-isbndb-key nil "0.2.0")
 
 (defcustom bib-omdb-key ""
   "Private key for The Open Movie Database."
@@ -193,31 +196,62 @@ Handles multiple authors separated by \" & \" correctly."
 ;;;;; ISBN
 
 (defun bib-search-isbn (&optional query)
-  "Query the ISBNdb database for QUERY.
-The query may include the title, author, or ISBN of the book."
+  "Query the Open Library database for QUERY.
+QUERY may include the title, author, or ISBN of the book.
+Return the ISBN of the selected candidate."
   (interactive)
-  (bib--ensure-key bib-isbndb-key "isbndb")
   (let* ((query (or query (read-string "Enter query (title and/or author): ")))
-	 (url (format "https://api2.isbndb.com/books/%s?page=1&pageSize=20"
-		      (url-hexify-string query)))
-	 (body (or (bib--http-get url `(("Accept" . "application/json")
-					("Authorization" . ,bib-isbndb-key)))
-		   (error "Network request to ISBNdb failed")))
+	 (url (bib--open-library-url query))
+	 (body (or (bib--http-get url)
+		   (error "Network request to Open Library failed")))
 	 (data (bib--parse-json body))
-	 (books (alist-get 'books data)))
-    (unless books
+	 (docs (alist-get 'docs data)))
+    (unless docs
       (user-error "No results found"))
-    (let ((candidates (mapcar (lambda (book)
-				(let* ((title (alist-get 'title book))
-				       (author (car-safe (alist-get 'authors book)))
-				       (isbn (alist-get 'isbn book)))
-				  (cons (if (and author (stringp author))
-					    (format "%s by %s" title
-						    (bib-reverse-first-last-name author))
-					  title)
-					isbn)))
-			      books)))
+    (let ((candidates (bib--open-library-candidates docs)))
+      (unless candidates
+	(user-error "No results with ISBN found"))
       (bib--completing-read "Select a book: " candidates))))
+
+(defun bib--open-library-url (query)
+  "Return the Open Library search URL for QUERY."
+  (format "https://openlibrary.org/search.json?q=%s&limit=20&fields=key,title,subtitle,author_name,isbn,first_publish_year"
+	  (url-hexify-string query)))
+
+(defun bib--open-library-candidates (docs)
+  "Return an alist of (DISPLAY . ISBN) from Open Library DOCS.
+Only entries with at least one ISBN are included."
+  (delq nil (mapcar #'bib--open-library-candidate docs)))
+
+(defun bib--open-library-candidate (doc)
+  "Return a (DISPLAY . ISBN) cons from Open Library DOC, or nil."
+  (when-let* ((isbn (bib--open-library-isbn doc)))
+    (cons (bib--open-library-display doc) isbn)))
+
+(defun bib--open-library-isbn (doc)
+  "Return the best ISBN from Open Library DOC, preferring ISBN-13."
+  (let ((isbns (alist-get 'isbn doc)))
+    (or (seq-find (lambda (i) (= (length i) 13)) isbns)
+	(car-safe isbns))))
+
+(defun bib--open-library-display (doc)
+  "Return a display string for Open Library DOC."
+  (let ((title (bib--open-library-full-title doc))
+	(author (car-safe (alist-get 'author_name doc)))
+	(year (alist-get 'first_publish_year doc)))
+    (concat title
+	    (when (and author (stringp author))
+	      (format " by %s" author))
+	    (when year
+	      (format " (%s)" year)))))
+
+(defun bib--open-library-full-title (doc)
+  "Return title with subtitle from Open Library DOC."
+  (let ((title (alist-get 'title doc))
+	(subtitle (alist-get 'subtitle doc)))
+    (if (and subtitle (stringp subtitle) (not (string-empty-p subtitle)))
+	(format "%s: %s" title subtitle)
+      title)))
 
 (defun bib-fetch-abstract-from-google-books (isbn)
   "Return the abstract of the book with ISBN."

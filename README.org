@@ -9,7 +9,7 @@
 
 * About
 
-=bib= is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, ISBNdb, OMDb, TMDb, Letterboxd---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full BibTeX entry (via [[https://github.com/mpedramfar/zotra][zotra]]).
+=bib= is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, Open Library, OMDb, TMDb, Letterboxd---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full BibTeX entry (via [[https://github.com/mpedramfar/zotra][zotra]]).
 
 This is not a full-featured reference manager---just a personal tool that I decided to publish because others might find it useful.
 
@@ -60,7 +60,7 @@ All interactive commands can be invoked via =M-x= or bound to keys of your choic
 | Command                          | Description                                                             |
 |----------------------------------+-------------------------------------------------------------------------|
 | =bib-search-crossref=             | Search Crossref by title/author, select a result, and get its DOI       |
-| =bib-search-isbn=                 | Search ISBNdb by title/author/ISBN and get the ISBN                     |
+| =bib-search-isbn=                 | Search Open Library by title/author/ISBN and get the ISBN (subtitle shown for matching) |
 | =bib-search-imdb=                 | Search OMDb by movie title and get the full IMDb URL                    |
 | =bib-search-letterboxd=           | Search Letterboxd by film title and get the slug or full URL            |
 | =bib-zotra-add-entry-from-title=  | Create a BibTeX entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd      |
@@ -80,9 +80,10 @@ All interactive commands can be invoked via =M-x= or bound to keys of your choic
 
 Several commands require API keys for the services they query.  Set these variables in your init file or via =M-x customize-group RET bib RET=:
 
+Note: =bib-search-isbn= now uses [[https://openlibrary.org][Open Library]] (free, no key required).  The =bib-isbndb-key= variable is obsolete.
+
 | Variable          | Service | Required by                          | How to get a key                        |
 |-------------------+---------+--------------------------------------+-----------------------------------------|
-| =bib-isbndb-key=    | ISBNdb  | =bib-search-isbn=                     | [[https://isbndb.com/isbn-database][isbndb.com]]    |
 | =bib-omdb-key=      | OMDb    | =bib-search-imdb=                     | [[https://www.omdbapi.com/][omdbapi.com]]   |
 | =bib-tmdb-key=      | TMDb    | =bib-translate-title-into-english=    | [[https://www.themoviedb.org/settings/api][themoviedb.org]]|
 
@@ -91,7 +92,6 @@ If a key is empty or nil when the corresponding command is invoked, a descriptiv
 Example:
 
 #+begin_src emacs-lisp
-(setopt bib-isbndb-key "your-isbndb-key-here")
 (setopt bib-omdb-key   "your-omdb-key-here")
 (setopt bib-tmdb-key   "your-tmdb-key-here")
 #+end_src

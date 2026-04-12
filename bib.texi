@@ -4,6 +4,7 @@
 @settitle bib
 @documentencoding UTF-8
 @documentlanguage en
+@c AUTO-GENERATED from README.org via ox-texinfo — do not edit manually.
 @c %**end of header
 
 @dircategory Emacs misc features
@@ -63,7 +64,7 @@ Indices
 @node About
 @chapter About
 
-@samp{bib} is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, ISBNdb, OMDb, TMDb, Letterboxd---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full Bib@TeX{} entry (via @uref{https://github.com/mpedramfar/zotra, zotra}).
+@samp{bib} is a small Emacs package for quickly retrieving bibliographic metadata for books, academic papers, and films.  Given only a title (and optionally an author), it searches the relevant public APIs---Crossref, Open Library, OMDb, TMDb, Letterboxd---locates the correct unique identifier (DOI, ISBN, IMDb ID, or Letterboxd slug), and returns a ready-to-use result: a DOI string, an IMDb URL, a Letterboxd slug, or a full Bib@TeX{} entry (via @uref{https://github.com/mpedramfar/zotra, zotra}).
 
 This is not a full-featured reference manager---just a personal tool that I decided to publish because others might find it useful.
 
@@ -132,13 +133,13 @@ All interactive commands can be invoked via @samp{M-x} or bound to keys of your 
 @node Interactive commands
 @section Interactive commands
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Command
 @tab Description
 @item @samp{bib-search-crossref}
 @tab Search Crossref by title/author, select a result, and get its DOI
 @item @samp{bib-search-isbn}
-@tab Search ISBNdb by title/author/ISBN and get the ISBN
+@tab Search Open Library by title/author/ISBN and get the ISBN (subtitle shown for matching)
 @item @samp{bib-search-imdb}
 @tab Search OMDb by movie title and get the full IMDb URL
 @item @samp{bib-search-letterboxd}
@@ -176,15 +177,13 @@ All interactive commands can be invoked via @samp{M-x} or bound to keys of your 
 
 Several commands require API keys for the services they query.  Set these variables in your init file or via @samp{M-x customize-group RET bib RET}:
 
-@multitable {aaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+Note: @samp{bib-search-isbn} now uses @uref{https://openlibrary.org, Open Library} (free, no key required).  The @samp{bib-isbndb-key} variable is obsolete.
+
+@multitable {aaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Service
 @tab Required by
 @tab How to get a key
-@item @samp{bib-isbndb-key}
-@tab ISBNdb
-@tab @samp{bib-search-isbn}
-@tab @uref{https://isbndb.com/isbn-database, isbndb.com}
 @item @samp{bib-omdb-key}
 @tab OMDb
 @tab @samp{bib-search-imdb}
@@ -200,7 +199,6 @@ If a key is empty or nil when the corresponding command is invoked, a descriptiv
 Example:
 
 @lisp
-(setopt bib-isbndb-key "your-isbndb-key-here")
 (setopt bib-omdb-key   "your-omdb-key-here")
 (setopt bib-tmdb-key   "your-tmdb-key-here")
 @end lisp
