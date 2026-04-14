@@ -116,6 +116,22 @@ Example:
 - *"No results found"*: the upstream API returned no matches for your query.  Try a different or more specific search term.
 - *Letterboxd searches return nothing*: the package tries the Letterboxd JSON autocomplete endpoint first, then falls back to DuckDuckGo HTML scraping.  Both approaches can fail if the services change their response format.  File an issue if this happens.
 
+* Development
+
+The test suite uses ERT.  Run it locally with:
+
+#+begin_src sh
+make test
+#+end_src
+
+Byte-compilation with warnings-as-errors:
+
+#+begin_src sh
+make compile
+#+end_src
+
+CI runs both steps on Emacs 29.4 and 30.1 via GitHub Actions.
+
 * License
 
 GPL-3.0 --- see =COPYING.txt= included in this repository.
