@@ -19,6 +19,7 @@ bib
 * Usage::
 * Configuration::
 * Troubleshooting::
+* Development::
 * License::
 * Indices::
 
@@ -217,7 +218,7 @@ Variable                      Type      Default               Description
      (setopt bib-letterboxd-use-slug-p t)
 
 
-File: bib.info,  Node: Troubleshooting,  Next: License,  Prev: Configuration,  Up: Top
+File: bib.info,  Node: Troubleshooting,  Next: Development,  Prev: Configuration,  Up: Top
 
 6 Troubleshooting
 *****************
@@ -233,9 +234,25 @@ File: bib.info,  Node: Troubleshooting,  Next: License,  Prev: Configuration,  U
      change their response format.  File an issue if this happens.
 
 
-File: bib.info,  Node: License,  Next: Indices,  Prev: Troubleshooting,  Up: Top
+File: bib.info,  Node: Development,  Next: License,  Prev: Troubleshooting,  Up: Top
 
-7 License
+7 Development
+*************
+
+The test suite uses ERT.  Run it locally with:
+
+     make test
+
+   Byte-compilation with warnings-as-errors:
+
+     make compile
+
+   CI runs both steps on Emacs 29.4 and 30.1 via GitHub Actions.
+
+
+File: bib.info,  Node: License,  Next: Indices,  Prev: Development,  Up: Top
+
+8 License
 *********
 
 GPL-3.0 -- see ‘COPYING.txt’ included in this repository.
@@ -243,7 +260,7 @@ GPL-3.0 -- see ‘COPYING.txt’ included in this repository.
 
 File: bib.info,  Node: Indices,  Prev: License,  Up: Top
 
-8 Indices
+9 Indices
 *********
 
 * Menu:
@@ -254,34 +271,35 @@ File: bib.info,  Node: Indices,  Prev: License,  Up: Top
 
 File: bib.info,  Node: Function index,  Next: Variable index,  Up: Indices
 
-8.1 Function index
+9.1 Function index
 ==================
 
 
 File: bib.info,  Node: Variable index,  Prev: Function index,  Up: Indices
 
-8.2 Variable index
+9.2 Variable index
 ==================
 
 
 Tag Table:
 Node: Top202
-Node: About633
-Node: Requirements1431
-Node: Installation1875
-Node: Manual2032
-Node: With use-package2251
-Node: Usage2787
-Node: Interactive commands3042
-Node: Non-interactive functions3890
-Node: Configuration4612
-Node: API keys4776
-Node: General options5857
-Node: Troubleshooting6730
-Node: License7433
-Node: Indices7601
-Node: Function index7730
-Node: Variable index7847
+Node: About649
+Node: Requirements1447
+Node: Installation1891
+Node: Manual2048
+Node: With use-package2267
+Node: Usage2803
+Node: Interactive commands3058
+Node: Non-interactive functions3906
+Node: Configuration4628
+Node: API keys4792
+Node: General options5873
+Node: Troubleshooting6746
+Node: Development7453
+Node: License7765
+Node: Indices7929
+Node: Function index8058
+Node: Variable index8175
 
 End Tag Table
 

@@ -32,6 +32,7 @@
 * Usage::
 * Configuration::
 * Troubleshooting::
+* Development::
 * License::
 * Indices::
 
@@ -239,6 +240,23 @@ Example:
 @item
 @strong{Letterboxd searches return nothing}: the package tries the Letterboxd JSON autocomplete endpoint first, then falls back to DuckDuckGo HTML scraping.  Both approaches can fail if the services change their response format.  File an issue if this happens.
 @end itemize
+
+@node Development
+@chapter Development
+
+The test suite uses ERT@.  Run it locally with:
+
+@example
+make test
+@end example
+
+Byte-compilation with warnings-as-errors:
+
+@example
+make compile
+@end example
+
+CI runs both steps on Emacs 29.4 and 30.1 via GitHub Actions.
 
 @node License
 @chapter License
