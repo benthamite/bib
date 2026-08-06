@@ -114,13 +114,16 @@ Returns nil if the request fails."
                (kill-buffer buf)))))))
 
 (defun bib--parse-json (text)
-  "Parse JSON TEXT into an alist with symbol keys, or nil on error."
+  "Parse UTF-8 JSON TEXT into an alist with symbol keys, or nil on error."
   (when (and text (not (string-empty-p text)))
     (condition-case nil
         (let ((json-object-type 'alist)
               (json-array-type 'list)
               (json-key-type 'symbol))
-          (json-read-from-string text))
+          (json-read-from-string
+           (if (multibyte-string-p text)
+               text
+             (decode-coding-string text 'utf-8))))
       (json-error nil))))
 
 (defun bib--completing-read (prompt candidates)
@@ -128,7 +131,9 @@ Returns nil if the request fails."
 CANDIDATES is an alist of (DISPLAY . VALUE).  Returns the VALUE
 of the selected entry."
   (let ((selection (completing-read prompt candidates nil t)))
-    (cdr (assoc selection candidates))))
+    (if-let* ((candidate (assoc selection candidates)))
+        (cdr candidate)
+      (error "Completion returned unknown candidate: %s" selection))))
 
 ;;;;; Crossref
 

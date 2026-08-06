@@ -312,6 +312,20 @@
       (should (equal (bib-search-imdb "test")
                      "https://www.imdb.com/title/tt1234567")))))
 
+(ert-deftest bib-test-search-imdb-decodes-utf-8-title ()
+  "Return the IMDb URL selected from a UTF-8 OMDb response."
+  (let ((bib-omdb-key "fake-key")
+        (body (encode-coding-string
+               "{\"Search\": [{\"Title\": \"Café Society\", \"Year\": \"2016\", \"imdbID\": \"tt4513674\"}]}"
+               'utf-8)))
+    (cl-letf (((symbol-function 'bib--http-get)
+               (lambda (_url &rest _) body))
+              ((symbol-function 'completing-read)
+               (lambda (_prompt _candidates &rest _)
+                 "Café Society (2016)")))
+      (should (equal (bib-search-imdb "cafe society")
+                     "https://www.imdb.com/title/tt4513674")))))
+
 (ert-deftest bib-test-search-imdb-no-results ()
   "Signal `user-error' when no movies are found."
   (let ((bib-omdb-key "fake-key"))
@@ -537,6 +551,13 @@
                (caar candidates))))
     (let ((candidates '(("Display A" . "value-a") ("Display B" . "value-b"))))
       (should (equal (bib--completing-read "Pick: " candidates) "value-a")))))
+
+(ert-deftest bib-test-completing-read-rejects-unmapped-selection ()
+  "Signal an error when completion returns no matching candidate."
+  (cl-letf (((symbol-function 'completing-read)
+             (lambda (&rest _) "Missing")))
+    (should-error
+     (bib--completing-read "Pick: " '(("Display" . "value"))))))
 
 (provide 'bib-test)
 

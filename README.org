@@ -61,7 +61,7 @@ All interactive commands can be invoked via =M-x= or bound to keys of your choic
 |----------------------------------+-------------------------------------------------------------------------|
 | =bib-search-crossref=             | Search Crossref by title/author, select a result, and get its DOI       |
 | =bib-search-isbn=                 | Search Open Library by title/author/ISBN and get the ISBN (subtitle shown for matching) |
-| =bib-search-imdb=                 | Search OMDb by movie title and get the full IMDb URL                    |
+| =bib-search-imdb=                 | Search OMDb by movie title, including non-ASCII titles, and get the full IMDb URL |
 | =bib-search-letterboxd=           | Search Letterboxd by film title and get the slug or full URL            |
 | =bib-zotra-add-entry-from-title=  | Create a BibTeX entry via zotra, choosing DOI/ISBN/IMDb/Letterboxd      |
 

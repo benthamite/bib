@@ -142,7 +142,7 @@ All interactive commands can be invoked via @samp{M-x} or bound to keys of your 
 @item @samp{bib-search-isbn}
 @tab Search Open Library by title/author/ISBN and get the ISBN (subtitle shown for matching)
 @item @samp{bib-search-imdb}
-@tab Search OMDb by movie title and get the full IMDb URL
+@tab Search OMDb by movie title, including non-ASCII titles, and get the full IMDb URL
 @item @samp{bib-search-letterboxd}
 @tab Search Letterboxd by film title and get the slug or full URL
 @item @samp{bib-zotra-add-entry-from-title}
